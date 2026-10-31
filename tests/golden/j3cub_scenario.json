@@ -1,0 +1,31 @@
+{
+  "description": "J3Cub trimmed at 1500 m near Ankara Esenboga heading east, then a roll and a pitch input.",
+  "aircraft": "J3Cub",
+  "data_dir": "addons/jsbsim/data",
+  "latitude": 39.95,
+  "longitude": 32.69,
+  "height_m": 1500.0,
+  "heading_deg": 90.0,
+  "pitch_deg": 0.0,
+  "roll_deg": 0.0,
+  "vc_kts": 70.0,
+  "trim_mode": 1,
+  "steps": 7200,
+  "sample_every": 120,
+  "inputs": [
+    {"step": 1200, "add": {"fcs/aileron-cmd-norm": 0.2}},
+    {"step": 1800, "add": {"fcs/aileron-cmd-norm": -0.2, "fcs/elevator-cmd-norm": -0.1}},
+    {"step": 2400, "add": {"fcs/elevator-cmd-norm": 0.1}}
+  ],
+  "properties": [
+    "position/lat-geod-deg",
+    "position/long-gc-deg",
+    "position/geod-alt-ft",
+    "velocities/vc-kts",
+    "attitude/psi-deg",
+    "attitude/theta-deg",
+    "attitude/phi-deg",
+    "fcs/elevator-pos-rad",
+    "fcs/throttle-cmd-norm"
+  ]
+}

@@ -20,5 +20,7 @@ If you ship a game with godot-jsbsim, keep the JSBSim library a separate, replac
 ## Aircraft data
 JSBSim's aircraft, engine and systems XML files are data with mixed licences (most fall under the repository's
 LGPL-2.1, some state GPL, many carry a "not to be sold" note). godot-jsbsim only distributes models whose files
-state neither GPL nor such a note; each one is listed in `THIRD_PARTY_NOTICES.md`. The tests use the files directly
-from the `thirdparty/jsbsim` submodule; nothing from there is distributed with the addon yet.
+state neither GPL nor such a note; each one is listed in `THIRD_PARTY_NOTICES.md`. The bundled models (`pc7`,
+`J3Cub`) are copied unmodified into `addons/jsbsim/data/` by `tools/bundle_aircraft.py`, which refuses models outside
+the reviewed list and files that mention the GPL or "not to be sold"; `--check` compares the bundle with the
+submodule. Other JSBSim models can be used from your own data folder at your own responsibility.

@@ -48,7 +48,9 @@ try {
 ```
 Godot exception kullanmaz; godot-cpp de onları varsayılan olarak kapatır. JSBSim ise hata için exception fırlatır.
 Bu yüzden bizim eklenti exception desteğiyle derleniyor (`disable_exceptions=no`) ve JSBSim'i çağıran her fonksiyon
-`try/catch` ile sarılı: hiçbir exception Godot'a kaçmamalı. Örnek: `src/jsbsim_probe.cpp`.
+`try/catch` ile sarılı: hiçbir exception Godot'a kaçmamalı. `src/fdm/jsbsim_fdm.cpp`'deki `guarded()` bunu tek
+yerde yapar. JSBSim'in eski kodu bazen `std::exception` değil düz `std::string` fırlatır; bu yüzden üç `catch` var:
+`std::exception`, `std::string` ve her şeyi yakalayan `catch (...)`.
 
 ## Akıllı işaretçi: `std::shared_ptr`
 `fdm.GetIC()` bir `std::shared_ptr<FGInitialCondition>` döndürür: nesneyi işaret eden, kaç kişinin onu tuttuğunu
@@ -61,5 +63,33 @@ otomatik olarak yok edilir ve tüm JSBSim belleği serbest kalır. Bu C++'ın RA
 ömrüne bağlıdır; `delete` yazmaya gerek yok.
 
 ## `bind_static_method`
-`ClassDB::bind_static_method("JSBSimProbe", D_METHOD("fly_test", ...), &JSBSimProbe::fly_test)` → GDScript'ten nesne
-oluşturmadan çağrılır: `JSBSimProbe.fly_test(...)`. (Normal metotlar `bind_method` ile bağlanır.)
+`ClassDB::bind_static_method("JSBSimFDM", D_METHOD("get_jsbsim_version"), &JSBSimFDM::get_jsbsim_version)` →
+GDScript'ten nesne oluşturmadan çağrılır: `JSBSimFDM.get_jsbsim_version()`. (Normal metotlar `bind_method` ile
+bağlanır; `DEFVAL(...)` varsayılan argüman verir.)
+
+## Sahiplik: `std::unique_ptr` ve `std::move` (Faz 1)
+`JSBSimFDM` içindeki `std::unique_ptr<FGFDMExec> fdm` nesnenin **tek sahibidir**: `JSBSimFDM` silinince ya da yeni
+model yüklenince (`fdm.reset()`) FGFDMExec otomatik silinir (RAII). `shared_ptr`'dan farkı: kopyalanamaz, sayaç yok.
+Sahipliği devretmek için `fdm = std::move(exec);` yazılır; `exec` boş kalır. Başlık dosyasında yalnızca
+`class FGFDMExec;` diye **ileri bildirim** var (JSBSim başlıklarını her yere taşımamak için); bu yüzden yıkıcı
+(`~JSBSimFDM() = default;`) `.cpp`'de tanımlı: `unique_ptr` nesneyi silerken tipin tam tanımını görmeli.
+
+## Lambda ve şablon (template) (Faz 1)
+`guarded([&]() { ok = fdm->RunIC(); }, error)` → `[&]() { ... }` yerinde yazılmış isimsiz bir fonksiyon (lambda);
+`[&]` dışarıdaki değişkenlere (`ok`, `fdm`) başvuruyla erişir. `guarded` bir şablon: `template <typename F>` her
+lambda tipi için derleyicinin ayrı bir kopya üretmesini sağlar. GDScript'teki `func(): ...` + `call()` gibi.
+
+## `thread_local` ve `std::atomic` (Faz 1)
+JSBSim'in günlükçüsü (logger) iş parçacığı başına bir tane: `SetLogger` yalnızca çağıran iş parçacığını etkiler.
+`thread_local bool installed` her iş parçacığında ayrı bir değişkendir, böylece kurulumu her iş parçacığında bir kez
+yaparız. Günlük seviyesini tüm iş parçacıkları okur; `std::atomic<int>` aynı anda okuma/yazmayı güvenli kılar.
+
+## Sanal fonksiyon ve `override` (Faz 1)
+`FGLogger` JSBSim'in soyut sınıfı (`virtual void Message(...) = 0;`). `GodotLogger` ondan türer ve fonksiyonları
+`override` ile yeniden tanımlar; JSBSim `FGLogger` işaretçisi üzerinden çağırır ama bizim kodumuz çalışır. GDScript'te
+bir sınıfı `extends` edip metodunu yeniden yazmaya benzer. `override`, imza tutmazsa derleyicinin hata vermesini
+sağlar.
+
+## `VARIANT_ENUM_CAST` ve `BIND_ENUM_CONSTANT` (Faz 1)
+C++ enum'unu GDScript'e açmak için: başlıkta `VARIANT_ENUM_CAST(JSBSimFDM::TrimMode);`, `_bind_methods`'ta
+`BIND_ENUM_CONSTANT(TRIM_FULL);`. GDScript'te `JSBSimFDM.TRIM_FULL` olarak görünür.

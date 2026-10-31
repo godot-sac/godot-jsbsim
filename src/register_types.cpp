@@ -4,7 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "jsbsim_probe.h"
+#include "fdm/jsbsim_fdm.h"
 
 using namespace godot;
 
@@ -12,7 +12,7 @@ void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_CLASS(JSBSimProbe);
+	GDREGISTER_CLASS(JSBSimFDM);
 }
 
 void uninitialize_godot_jsbsim(ModuleInitializationLevel p_level) {

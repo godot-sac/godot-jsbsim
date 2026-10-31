@@ -18,4 +18,4 @@ G=${GODOT:-}
 if [ -z "$G" ]; then G=$(find ~ -maxdepth 3 -name 'Godot_v4.7.2-stable_linux.x86_64' | head -1); fi
 echo "godot: $G"
 "$G" --headless --path . --import >/dev/null 2>&1 || true
-"$G" --headless --path . -s addons/gut/gut_cmdln.gd 2>&1 | grep -E "Passing|Failing|Failed|Pending|diff"
+"$G" --headless --path . -s addons/gut/gut_cmdln.gd 2>&1 | grep -E "Passing|Failing|Failed|Pending|worst"

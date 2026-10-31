@@ -1,45 +1,85 @@
-"""Oracle for JSBSimProbe.fly_test: the same flight with the official JSBSim Python package (same version).
+"""Oracle for JSBSimFDM: runs a scenario file with the official JSBSim Python package (same version).
 
-Usage: tools/.venv/Scripts/python.exe tools/oracle_fly.py <root_dir> <aircraft> <seconds>
-Prints the final state as one JSON object (same keys as JSBSimProbe.fly_test).
+Usage: tools/.venv/Scripts/python.exe tools/oracle_fly.py <scenario.json> [<data_dir>]
+The scenario format is described in tests/golden/pc7_scenario.json; tests/unit/test_oracle.gd runs the same file
+with JSBSimFDM. Prints one JSON object: {"ok", "steps", "sim_time", "trim_ok", "samples": [{"step", <property>...}]}.
 """
 
 from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 import jsbsim
 
-PROPS = ["position/lat-geod-deg", "position/long-gc-deg", "position/geod-alt-ft", "position/h-sl-ft",
-         "velocities/vc-kts", "attitude/psi-deg", "attitude/theta-deg", "attitude/phi-deg"]
+ROOT = Path(__file__).resolve().parent.parent
+FT_PER_M = 1.0 / 0.3048
+
+
+def set_geodetic_height(fdm: jsbsim.FGFDMExec, height_m: float) -> None:
+    # Same iteration as JSBSimFDM::set_initial_position (src/fdm/jsbsim_fdm.cpp).
+    target = height_m * FT_PER_M
+    asl = target
+    for _ in range(10):
+        fdm["ic/h-sl-ft"] = asl
+        error = target - fdm["ic/geod-alt-ft"]
+        if abs(error) < 1e-9:
+            break
+        asl += error
+
+
+def run(scenario: dict, data_dir: Path) -> dict:
+    fdm = jsbsim.FGFDMExec(str(data_dir))
+    fdm.set_debug_level(0)
+    if not fdm.load_model(scenario["aircraft"]):
+        sys.exit(f"load_model failed: {scenario['aircraft']}")
+    # Same order as tests/unit/test_oracle.gd.
+    fdm["ic/lat-geod-deg"] = scenario["latitude"]
+    fdm["ic/long-gc-deg"] = scenario["longitude"]
+    set_geodetic_height(fdm, scenario["height_m"])
+    fdm["ic/psi-true-deg"] = scenario["heading_deg"]
+    fdm["ic/theta-deg"] = scenario["pitch_deg"]
+    fdm["ic/phi-deg"] = scenario["roll_deg"]
+    fdm["ic/vc-kts"] = scenario["vc_kts"]
+    fdm.run_ic()
+    fdm.get_propulsion().init_running(-1)
+    trim_ok = True
+    if scenario.get("trim_mode", -1) >= 0:
+        try:
+            fdm["simulation/do_simple_trim"] = scenario["trim_mode"]
+        except jsbsim.TrimFailureError:
+            trim_ok = False
+
+    inputs = {entry["step"]: entry for entry in scenario.get("inputs", [])}
+    samples = []
+
+    def sample(step: int) -> None:
+        samples.append({"step": step, **{p: fdm[p] for p in scenario["properties"]}})
+
+    step = 0
+    sample(0)
+    while step < scenario["steps"]:
+        entry = inputs.get(step)
+        if entry:
+            for name, value in entry.get("set", {}).items():
+                fdm[name] = value
+            for name, value in entry.get("add", {}).items():
+                fdm[name] = fdm[name] + value
+        if not fdm.run():
+            break
+        step += 1
+        if step % scenario["sample_every"] == 0:
+            sample(step)
+    return {"ok": True, "steps": step, "sim_time": fdm.get_sim_time(), "trim_ok": trim_ok,
+            "version": jsbsim.__version__, "samples": samples}
 
 
 def main() -> None:
-    root, aircraft, seconds = sys.argv[1], sys.argv[2], float(sys.argv[3])
-    fdm = jsbsim.FGFDMExec(root)
-    fdm.set_debug_level(0)
-    if not fdm.load_model(aircraft):
-        sys.exit(f"load_model failed: {aircraft}")
-    # Keep in sync with src/jsbsim_probe.cpp.
-    fdm["ic/lat-geod-deg"] = 39.95
-    fdm["ic/long-gc-deg"] = 32.69
-    fdm["ic/h-sl-ft"] = 5000.0
-    fdm["ic/psi-true-deg"] = 0.0
-    fdm["ic/vc-kts"] = 150.0
-    fdm.run_ic()
-    fdm.get_propulsion().init_running(-1)
-    fdm["fcs/throttle-cmd-norm"] = 0.8
-    fdm["fcs/mixture-cmd-norm"] = 1.0
-    steps = 0
-    while fdm.get_sim_time() < seconds:
-        if not fdm.run():
-            break
-        steps += 1
-    out = {"ok": True, "steps": steps, "dt": fdm.get_delta_t(), "sim_time": fdm.get_sim_time(),
-           "version": jsbsim.__version__}
-    out.update({p: fdm[p] for p in PROPS})
-    print(json.dumps(out))
+    scenario_path = Path(sys.argv[1])
+    scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+    data_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / scenario["data_dir"]
+    print(json.dumps(run(scenario, data_dir)))
 
 
 if __name__ == "__main__":

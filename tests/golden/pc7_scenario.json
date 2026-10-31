@@ -1,0 +1,27 @@
+{
+  "description": "pc7 untrimmed (its turboprop model does not trim in JSBSim 1.3.3) at 1500 m near Ankara Esenboga heading north, fixed throttle.",
+  "aircraft": "pc7",
+  "data_dir": "addons/jsbsim/data",
+  "latitude": 39.95,
+  "longitude": 32.69,
+  "height_m": 1500.0,
+  "heading_deg": 0.0,
+  "pitch_deg": 0.0,
+  "roll_deg": 0.0,
+  "vc_kts": 150.0,
+  "trim_mode": -1,
+  "steps": 7200,
+  "sample_every": 120,
+  "inputs": [
+    {"step": 0, "set": {"fcs/throttle-cmd-norm": 0.8, "fcs/mixture-cmd-norm": 1.0}}
+  ],
+  "properties": [
+    "position/lat-geod-deg",
+    "position/long-gc-deg",
+    "position/geod-alt-ft",
+    "velocities/vc-kts",
+    "attitude/psi-deg",
+    "attitude/theta-deg",
+    "attitude/phi-deg"
+  ]
+}

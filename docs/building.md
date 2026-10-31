@@ -63,5 +63,13 @@ $godot = "C:\path\to\godot.exe"   # your Godot path
 & $godot --headless --path . --import
 & $godot --headless --path . -s addons/gut/gut_cmdln.gd
 ```
-`test_matches_python_oracle` runs `tools/oracle_fly.py` (the official `jsbsim` Python package, same version) and
-compares the final state of a 60 s flight; it is "pending" if `tools/.venv` is missing.
+`test_oracle.gd` runs every `tests/golden/*_scenario.json` (aircraft, initial condition, trim, control inputs, sampled
+properties) with `JSBSimFDM` and with `tools/oracle_fly.py` (the official `jsbsim` Python package, same version) and
+compares the trajectories; it is "pending" if `tools/.venv` is missing. `test_data.gd` builds a `.pck` with
+`PCKPacker` to check the extraction used by exported games.
+
+## Bundled aircraft
+```sh
+tools/.venv/Scripts/python tools/bundle_aircraft.py            # copy the bundled models and COPYING.JSBSim
+tools/.venv/Scripts/python tools/bundle_aircraft.py --check    # verify the bundle matches the submodule
+```

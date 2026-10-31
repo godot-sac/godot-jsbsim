@@ -16,6 +16,13 @@ dynamically by the extension; it can be replaced by the user. Copyright the JSBS
 JSBSim bundles third-party code of its own (Expat, parts of SimGear, GeographicLib, an MSIS atmosphere model);
 their notices are in the JSBSim source tree.
 
+### JSBSim aircraft data
+`addons/jsbsim/data/aircraft/` — copied unmodified from JSBSim 1.3.3 by `tools/bundle_aircraft.py`; part of the
+JSBSim distribution and covered by its **LGPL-2.1** (`COPYING.JSBSim`). The files carry neither a GPL notice nor a
+"not to be sold" note.
+- `pc7` — Pilatus PC-7, created with Aeromatic 3.3.0 (2016). Not endorsed by the manufacturer.
+- `J3Cub` — Piper J-3 Cub, Erik Hofman using Aeromatic 3.2.0 (2015). Not endorsed by the manufacturer.
+
 ### godot-cpp 10.0.0
 https://github.com/godotengine/godot-cpp — MIT License, Copyright (c) 2017-present Godot Engine contributors.
 Compiled into the extension.

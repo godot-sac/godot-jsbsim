@@ -116,7 +116,7 @@ jobs:
             cp -r "artifacts/bin-$platform/." "addons/jsbsim/bin/$platform/"
           done
           cp LICENSE THIRD_PARTY_NOTICES.md addons/jsbsim/
-          cp thirdparty/jsbsim/COPYING addons/jsbsim/COPYING.JSBSim
+          python3 tools/bundle_aircraft.py --check
           find addons/jsbsim -type f | sort
       - uses: actions/upload-artifact@v4
         with:

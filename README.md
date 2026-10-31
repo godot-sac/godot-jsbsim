@@ -4,13 +4,18 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Work in progress (Phase 0: build chain). Not usable yet. See [PLAN.md](PLAN.md).
+> 🚧 Work in progress (Phase 1: core FDM wrapper). Usable from GDScript; no scene node or demo yet.
+> See [PLAN.md](PLAN.md).
 
 ## Features
 Done:
 - JSBSim 1.3.3 built as a shared library on Windows (MSVC) and Linux (GCC) by `tools/build_jsbsim.py`
 - The extension loads it from the addon folder, without changing `PATH`; JSBSim errors never crash Godot
-- Results match the official JSBSim Python package (60 s flight, differences ~1e-14)
+- `JSBSimFDM`: load a model, set the initial condition (geodetic position, ellipsoid height), trim, step, read and
+  write any JSBSim property; JSBSim messages go to the Godot output
+- Works in exported games: the XML data is extracted from the `.pck` to `user://` on first use
+- Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
+- Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Planned (see [PLAN.md](PLAN.md)):
 - `JSBSimAircraft` node: initial conditions, controls, any JSBSim property, keyboard / joystick input
@@ -29,13 +34,28 @@ No release yet. Build from source ([docs/building.md](docs/building.md)), then c
 project.
 
 ## Usage
-Phase 0 provides only a smoke test:
 ```gdscript
-print(JSBSimProbe.get_jsbsim_version())                      # "1.3.3 ..."
-var r := JSBSimProbe.fly_test("res://path/to/jsbsim_data", "pc7", 10.0)
-print(r["position/geod-alt-ft"], " ft, ", r["velocities/vc-kts"], " kt")
+var fdm := JSBSimFDM.new()
+if not fdm.load_model("J3Cub"):                  # from res://addons/jsbsim/data
+	push_error(fdm.get_last_error())
+	return
+fdm.set_initial_position(39.95, 32.69, 1500.0)   # latitude, longitude (deg), height above the WGS84 ellipsoid (m)
+fdm.set_initial_orientation(90.0, 0.0, 0.0)      # heading, pitch, roll (deg)
+fdm.set_initial_airspeed(70.0)                   # calibrated airspeed (kt)
+fdm.run_ic()
+fdm.start_engines()
+fdm.trim()                                       # false if the model cannot be trimmed here
+fdm.set_property("fcs/aileron-cmd-norm", 0.1)
+fdm.step(120)                                    # 120 steps of 1/120 s
+print(fdm.get_property("position/geod-alt-ft"), " ft")
 ```
-`root_dir` is a folder with JSBSim's `aircraft/`, `engine/` and `systems/` subfolders.
+- Other data folders: `load_model("name", "res://my_aircraft")`, a folder with JSBSim's `aircraft/` and optionally
+  `engine/` and `systems/` subfolders.
+- **Exporting:** JSBSim reads plain XML files. Add `*.xml` to *Export → Resources → Filters to export non-resource
+  files*, otherwise they are not in the `.pck`.
+- `JSBSimFDM.set_log_level(JSBSimFDM.LOG_INFO)` shows more JSBSim messages; `set_debug_level(1)` turns on JSBSim's
+  own console output (model summary, trim report).
+- The bundled `pc7` does not trim in JSBSim 1.3.3 (its turboprop engine model); start it with fixed controls.
 
 ## Demos
 Planned: an aircraft flying with keyboard / joystick input, then over real terrain with godot-geo.
