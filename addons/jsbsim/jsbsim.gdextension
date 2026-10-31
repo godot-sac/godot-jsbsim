@@ -1,0 +1,21 @@
+[configuration]
+
+entry_symbol = "godot_jsbsim_library_init"
+compatibility_minimum = "4.3"
+reloadable = false
+
+[libraries]
+
+windows.debug.x86_64 = "res://addons/jsbsim/bin/windows/libgodot_jsbsim.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/jsbsim/bin/windows/libgodot_jsbsim.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "res://addons/jsbsim/bin/linux/libgodot_jsbsim.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/jsbsim/bin/linux/libgodot_jsbsim.linux.template_release.x86_64.so"
+macos.debug = "res://addons/jsbsim/bin/macos/libgodot_jsbsim.macos.template_debug.universal.dylib"
+macos.release = "res://addons/jsbsim/bin/macos/libgodot_jsbsim.macos.template_release.universal.dylib"
+
+; The JSBSim shared library (LGPL-2.1), loaded by the extension and copied next to it on export.
+[dependencies]
+
+windows.x86_64 = { "res://addons/jsbsim/bin/windows/JSBSim.dll" : "" }
+linux.x86_64 = { "res://addons/jsbsim/bin/linux/libJSBSim.so.1" : "" }
+macos = { "res://addons/jsbsim/bin/macos/libJSBSim.1.dylib" : "Contents/Frameworks" }

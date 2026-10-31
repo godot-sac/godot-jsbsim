@@ -1,0 +1,8 @@
+[submodule "thirdparty/godot-cpp"]
+	path = thirdparty/godot-cpp
+	url = https://github.com/godotengine/godot-cpp
+	ignore = untracked
+[submodule "thirdparty/jsbsim"]
+	path = thirdparty/jsbsim
+	url = https://github.com/JSBSim-Team/jsbsim
+	ignore = untracked
