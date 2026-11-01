@@ -24,6 +24,11 @@ All notable changes to this project are documented here. Versions follow [semver
   below the ground; `restart()` reloads the model after a crash.
 - Terrain demo `demo/terrain_flight.tscn` (godot-geo, linked with `tools/link_siblings.py`), `--ground` and
   `--takeoff` (a simple autopilot, `demo/autopilot.gd`) options.
+- DIS through godot-dis (no build dependency): a `DisEntity` child of `JSBSimAircraft` gets JSBSim's velocity,
+  acceleration and body rates in game time (zero while paused or crashed) and the destroyed appearance after a
+  crash; `get_linear_acceleration()`; `JSBSimDisTypes` with the SISO-REF-010 types of the bundled aircraft.
+- `--dis`, `--port`, `--marking` demo options; `tools/link_siblings.py` also links godot-dis; `tools/dis_capture.py`
+  decodes the PDUs on the network with Open-DIS.
 - `JSBSimInput` (GDScript): keyboard and gamepad input through InputMap actions.
 - Flight demo `demo/flight.tscn` with chase / cockpit cameras, HUD, property panel, debug keys and command-line
   options for automated runs.

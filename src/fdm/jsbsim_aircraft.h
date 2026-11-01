@@ -46,7 +46,10 @@ public:
 	int advance(double delta);
 
 	godot::Ref<JSBSimFDM> get_fdm() const { return fdm; }
+	// Velocity and acceleration relative to the ground in scene axes (m/s, m/s²); angular velocity in scene axes
+	// (rad/s). In simulation time: multiply by time_scale for game time.
 	godot::Vector3 get_linear_velocity() const { return linear_velocity; }
+	godot::Vector3 get_linear_acceleration() const { return linear_acceleration; }
 	godot::Vector3 get_angular_velocity() const { return angular_velocity; }
 	// [latitude (deg), longitude (deg), height above the ellipsoid (m)].
 	godot::PackedFloat64Array get_geodetic_position() const;
@@ -120,6 +123,10 @@ private:
 	void check_crash();
 	// Returns false (and stops the aircraft) if the JSBSim state is invalid.
 	bool update_transform();
+	// Gives child DisEntity nodes (godot-dis, found by class name) JSBSim's velocities instead of their own
+	// estimate, scaled to game time (zero while stopped), and marks the entity destroyed after a crash. Runs every
+	// physics frame and after advance().
+	void update_dis_entities();
 
 	godot::String aircraft = "J3Cub";
 	godot::String data_dir = JSBSimFDM::DEFAULT_DATA_DIR;
@@ -160,7 +167,9 @@ private:
 	bool started = false;
 	bool failed = false;
 	bool crashed = false;
+	bool advanced = false; // advance() stepped since the last physics frame
 	double accumulator = 0.0;
 	godot::Vector3 linear_velocity;
+	godot::Vector3 linear_acceleration;
 	godot::Vector3 angular_velocity;
 };

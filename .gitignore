@@ -28,4 +28,5 @@ build/
 
 # Terrain demo: sibling repositories linked by tools/link_siblings.py
 addons/geo
+addons/dis
 terrain

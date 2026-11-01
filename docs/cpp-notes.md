@@ -119,6 +119,13 @@ Zemin düğümünü ham işaretçi (`Node *`) olarak saklamak tehlikeli: düğü
 olur. Bunun yerine `ObjectID` saklanır; her kullanımda `ObjectDB::get_instance(id)` nesne hâlâ varsa onu, yoksa
 `nullptr` döndürür. GDScript'teki `is_instance_valid()` / `weakref` ile aynı fikir.
 
+## Başka bir eklentinin sınıfını derleme bağımlılığı olmadan kullanmak (Faz 4)
+`DisEntity` godot-dis'te tanımlı; onun başlığını `#include` edersek godot-jsbsim godot-dis olmadan derlenmez. Bunun
+yerine Godot'un çalışma zamanı tip bilgisini kullanırız: `child->is_class("DisEntity")` sınıfı adıyla sorar (miras
+zinciri dahil), `child->set("linear_velocity", v)` / `child->get("appearance")` özelliklere adlarıyla erişir. Bu
+GDScript'teki ördek tiplemenin C++ karşılığı: biraz daha yavaş (ad araması) ama kare başına birkaç çağrı için önemsiz,
+ve godot-dis yoksa hiçbir şey olmaz.
+
 ## `VARIANT_ENUM_CAST` ve `BIND_ENUM_CONSTANT` (Faz 1)
 C++ enum'unu GDScript'e açmak için: başlıkta `VARIANT_ENUM_CAST(JSBSimFDM::TrimMode);`, `_bind_methods`'ta
 `BIND_ENUM_CONSTANT(TRIM_FULL);`. GDScript'te `JSBSimFDM.TRIM_FULL` olarak görünür.

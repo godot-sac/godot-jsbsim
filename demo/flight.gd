@@ -12,6 +12,10 @@ extends Node3D
 ##   --cockpit           start with the cockpit camera
 ##   --aileron X         hold a fixed aileron command (input tests)
 ##   --takeoff           FlightAutopilot takes off (with --ground) and climbs straight ahead
+##   --dis               publish the aircraft on a DIS network with godot-dis (link it with tools/link_siblings.py):
+##                       multicast 239.1.2.3, exercise 1, like the godot-dis and godot-geo demos
+##   --port N            DIS port (default 3000); another port is a separate exercise, e.g. for tests
+##   --marking TEXT      DIS marking (default the aircraft name)
 
 const SCATTER_COUNT := 600
 const SCATTER_RADIUS := 15000.0
@@ -32,6 +36,7 @@ var _max_agl := -INF
 var _log_timer := 0.0
 var _fixed_aileron := NAN
 var _autopilot: FlightAutopilot
+var _dis_entity: Node  # godot-dis DisEntity, created by name so the demo runs without godot-dis
 
 
 func _ready() -> void:
@@ -40,6 +45,8 @@ func _ready() -> void:
 		aircraft.aircraft = _options.aircraft
 	aircraft.start_on_ground = _options.has("ground")
 	_setup_world()
+	if _options.has("dis"):
+		_setup_dis()
 	# The aircraft started in its own _ready(), before the options and the world were set up.
 	if not aircraft.start():
 		push_error("Cannot start %s: %s" % [aircraft.aircraft, aircraft.get_fdm().get_last_error()])
@@ -118,6 +125,43 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().quit()
 
 
+## A DIS network, an origin at the aircraft's origin and a DisEntity on the aircraft. JSBSimAircraft gives the entity
+## its velocities; the entity decides when to send (dead reckoning thresholds, heartbeat).
+func _setup_dis() -> void:
+	if not ClassDB.class_exists("DisEntity"):
+		push_error("--dis needs godot-dis: run tools/link_siblings.py, then <godot> --headless --path . --import")
+		return
+	var network: Node = ClassDB.instantiate("DisNetwork")
+	network.name = "DisNetwork"
+	network.mode = 2  # multicast
+	network.multicast_group = "239.1.2.3"
+	network.port = int(_options.get("port", 3000))
+	network.share_port = true  # next to other simulations on this computer
+	network.exercise_id = 1
+	network.site_id = 7
+	network.application_id = 1
+	add_child(network)
+	var origin: Node = ClassDB.instantiate("DisGeoOrigin")
+	origin.name = "DisGeoOrigin"
+	origin.latitude = aircraft.origin_latitude
+	origin.longitude = aircraft.origin_longitude
+	origin.height = aircraft.origin_height
+	add_child(origin)
+	aircraft.geo_origin_path = aircraft.get_path_to(origin)
+	_dis_entity = ClassDB.instantiate("DisEntity")
+	_dis_entity.name = "DisEntity"
+	_dis_entity.network_path = NodePath("../../DisNetwork")
+	_dis_entity.origin_path = NodePath("../../DisGeoOrigin")
+	_dis_entity.entity_id = Vector3i(0, 0, 1)  # site / application from the network
+	_dis_entity.force_id = 1  # friendly
+	_dis_entity.entity_type = JSBSimDisTypes.for_aircraft(aircraft.aircraft)
+	_dis_entity.marking = str(_options.get("marking", aircraft.aircraft)).left(11)
+	_dis_entity.dr_algorithm = 4  # DRM(R, V, W): rotation, velocity and acceleration, for manoeuvring aircraft
+	aircraft.add_child(_dis_entity)
+	print("DIS: publishing %s as %s, type %s, on 239.1.2.3:%d exercise 1" % [_dis_entity.marking,
+			_dis_entity.get_effective_entity_id(), _dis_entity.entity_type, network.port])
+
+
 ## The scenery around the aircraft; terrain_flight.gd replaces it with real terrain.
 func _setup_world() -> void:
 	_scatter_landmarks()
@@ -135,7 +179,8 @@ func _log_state() -> void:
 	print("t=%5.1f s  pos=(%.0f, %.0f, %.0f) m  ias=%.1f kt  hdg=%.1f  pitch=%.1f  roll=%.1f  thr=%.2f" % [
 		fdm.get_sim_time(), aircraft.position.x, aircraft.position.y, aircraft.position.z,
 		fdm.get_property("velocities/vc-kts"), fposmod(fdm.get_property("attitude/psi-deg"), 360.0),
-		fdm.get_property("attitude/theta-deg"), fdm.get_property("attitude/phi-deg"), aircraft.throttle])
+		fdm.get_property("attitude/theta-deg"), fdm.get_property("attitude/phi-deg"), aircraft.throttle]
+		+ ("  dis_sent=%d" % _dis_entity.get_published_count() if _dis_entity else ""))
 
 
 func _finish() -> void:
@@ -143,11 +188,12 @@ func _finish() -> void:
 	var distance := aircraft.position.distance_to(_start_position)
 	var ok := aircraft.is_started() and not aircraft.is_failed() and not aircraft.is_crashed()
 	print(("FLIGHT_CHECK %s aircraft=%s sim_time=%.2f distance=%.0f m agl=%.1f..%.1f m ias=%.1f kt hdg=%.1f "
-			+ "on_ground=%s crashed=%s") % [
+			+ "on_ground=%s crashed=%s dis_sent=%d") % [
 		"ok" if ok else "FAILED", aircraft.aircraft, fdm.get_sim_time() if fdm.is_loaded() else 0.0, distance,
 		_min_agl, _max_agl, fdm.get_property("velocities/vc-kts") if fdm.is_loaded() else 0.0,
 		fposmod(fdm.get_property("attitude/psi-deg"), 360.0) if fdm.is_loaded() else 0.0,
-		aircraft.is_on_ground() if fdm.is_loaded() else false, aircraft.is_crashed()])
+		aircraft.is_on_ground() if fdm.is_loaded() else false, aircraft.is_crashed(),
+		_dis_entity.get_published_count() if _dis_entity else -1])
 	if _options.has("screenshot"):
 		await RenderingServer.frame_post_draw
 		var path: String = _options.screenshot

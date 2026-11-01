@@ -14,6 +14,7 @@
 #include <FGFDMExec.h>
 #include <initialization/FGInitialCondition.h>
 #include <input_output/FGGroundCallback.h>
+#include <models/FGAccelerations.h>
 #include <models/FGFCS.h>
 #include <models/FGGroundReactions.h>
 #include <models/FGInertial.h>
@@ -32,6 +33,11 @@ constexpr int MAX_STEPS_PER_ADVANCE = 2400;
 // few steps before it becomes NaN.
 constexpr double MAX_ECEF_DISTANCE = 1e9; // m, well past the Moon's orbit
 constexpr double MAX_SPEED = 1e5; // m/s
+// DIS entity appearance, air platform: bits 3-4 damage (3 = destroyed).
+constexpr int64_t APPEARANCE_DAMAGE_MASK = 3 << 3;
+constexpr int64_t APPEARANCE_DESTROYED = 3 << 3;
+// godot-dis DisEntity::VELOCITY_MANUAL
+constexpr int DIS_VELOCITY_MANUAL = 1;
 
 bool is_finite(const Vec3 &v) {
 	return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
@@ -213,12 +219,39 @@ bool JSBSimAircraft::apply_initial_condition() {
 	apply_controls();
 	accumulator = 0.0;
 	failed = false;
-	return update_transform();
+	const bool valid = update_transform();
+	update_dis_entities();
+	return valid;
 }
 
 void JSBSimAircraft::_physics_process(double delta) {
 	if (started && !failed && !crashed && !paused) {
 		advance(delta);
+	}
+	update_dis_entities();
+	advanced = false;
+}
+
+void JSBSimAircraft::update_dis_entities() {
+	// Paused but driven with advance() (tests, single steps) still counts as moving.
+	const bool moving = fdm->is_loaded() && !failed && !crashed && (!paused || advanced);
+	const double scale = moving ? time_scale : 0.0;
+	// The entity is a child: its own axes are the aircraft's.
+	const Basis to_local = get_transform().basis.transposed();
+	for (int i = 0; i < get_child_count(); i++) {
+		Node *child = get_child(i);
+		if (!child->is_class("DisEntity")) {
+			continue;
+		}
+		child->set("velocity_source", DIS_VELOCITY_MANUAL);
+		child->set("linear_velocity", linear_velocity * scale);
+		child->set("linear_acceleration", linear_acceleration * (scale * scale));
+		child->set("angular_velocity", to_local.xform(angular_velocity) * scale);
+		const int64_t appearance = child->get("appearance");
+		const int64_t wanted = (appearance & ~APPEARANCE_DAMAGE_MASK) | (crashed ? APPEARANCE_DESTROYED : 0);
+		if (wanted != appearance) {
+			child->set("appearance", wanted);
+		}
 	}
 }
 
@@ -252,6 +285,8 @@ int JSBSimAircraft::advance(double delta) {
 		}
 	}
 	update_transform();
+	advanced = done > 0;
+	update_dis_entities();
 	return done;
 }
 
@@ -359,8 +394,14 @@ bool JSBSimAircraft::update_transform() {
 	set_transform(Transform3D(basis, to_vector3(enu_to_godot(frame.ecef_to_enu(ecef)))));
 
 	linear_velocity = to_vector3(enu_to_godot(ecef_to_enu * velocity));
-	const Vec3 rates = body * to_vec3(propagate->GetPQR());
-	angular_velocity = to_vector3(enu_to_godot(ecef_to_enu * rates));
+	const Vec3 pqr = to_vec3(propagate->GetPQR()); // body rates relative to the Earth
+	angular_velocity = to_vector3(enu_to_godot(ecef_to_enu * (body * pqr)));
+	// Acceleration relative to the Earth: JSBSim's UVWdot is the derivative of the body-axis velocity in the
+	// rotating body frame, so add the rotation term (pqr × uvw) before turning it into Earth axes.
+	const Vec3 uvw = to_vec3(propagate->GetUVW(), M_PER_FT);
+	const Vec3 uvw_dot = to_vec3(exec->GetAccelerations()->GetUVWdot(), M_PER_FT);
+	const Vec3 acceleration = body * (uvw_dot + pqr.cross(uvw));
+	linear_acceleration = is_finite(acceleration) ? to_vector3(enu_to_godot(ecef_to_enu * acceleration)) : Vector3();
 	return true;
 }
 
@@ -423,6 +464,7 @@ void JSBSimAircraft::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("advance", "delta"), &JSBSimAircraft::advance);
 	ClassDB::bind_method(D_METHOD("get_fdm"), &JSBSimAircraft::get_fdm);
 	ClassDB::bind_method(D_METHOD("get_linear_velocity"), &JSBSimAircraft::get_linear_velocity);
+	ClassDB::bind_method(D_METHOD("get_linear_acceleration"), &JSBSimAircraft::get_linear_acceleration);
 	ClassDB::bind_method(D_METHOD("get_angular_velocity"), &JSBSimAircraft::get_angular_velocity);
 	ClassDB::bind_method(D_METHOD("get_geodetic_position"), &JSBSimAircraft::get_geodetic_position);
 

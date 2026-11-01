@@ -4,7 +4,7 @@ set -e
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 DST=~/gjsb-ci
 mkdir -p $DST
-rsync -a --delete --exclude .git --exclude build --exclude addons/geo --exclude terrain --exclude .godot --exclude 'tools/.venv' --exclude 'addons/jsbsim/bin' \
+rsync -a --delete --exclude .git --exclude build --exclude addons/geo --exclude addons/dis --exclude terrain --exclude .godot --exclude 'tools/.venv' --exclude 'addons/jsbsim/bin' \
   --exclude '*.obj' --exclude '*.lib' --exclude '*.exp' --exclude '*.pdb' --exclude '*.os' --exclude '*.o' \
   "$SRC/" $DST/
 cd $DST

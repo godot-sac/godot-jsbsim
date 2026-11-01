@@ -73,6 +73,11 @@ JSBSim's own heading / pitch / roll.
 
 `test_ground.gd` flies takeoff and landing with the simple autopilot in `demo/autopilot.gd`.
 
+`test_dis.gd` needs godot-dis (`tools/link_siblings.py`; skipped otherwise): it compares the Entity State PDU of a
+`DisEntity` on the aircraft with JSBSim's position, attitude, velocity and body rates. On the network:
+`tools/.venv/Scripts/python tools/dis_capture.py --port 3920` and a demo with `--dis --port 3920` (any free port, so
+open demos are not disturbed); it decodes each PDU with Open-DIS and reports the dead reckoning error.
+
 The flight demo can run unattended: `godot --headless --path . res://demo/flight.tscn -- --seconds 60` prints a
 `FLIGHT_CHECK` line and exits with 1 if the aircraft failed or touched the ground.
 

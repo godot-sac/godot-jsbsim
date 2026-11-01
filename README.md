@@ -4,7 +4,7 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Work in progress (Phase 3: ground and terrain). No DIS output yet. See [PLAN.md](PLAN.md).
+> 🚧 Work in progress (Phase 4: DIS). No release or prebuilt libraries yet. See [PLAN.md](PLAN.md).
 
 ![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
 
@@ -21,12 +21,14 @@ Done:
 - Ground contact: JSBSim's landing gear touches the scene's ground, flat or any node with `height_at(x, z)` such as
   godot-geo `GeoTerrain`; start at rest on the ground, take off, land; crash detection (`crashed` signal) when a wing
   or other structure touches the ground or the gear hits it too fast
+- DIS (with godot-dis): a `DisEntity` child publishes the aircraft with JSBSim's own velocity, acceleration and body
+  rates for dead reckoning, and as destroyed after a crash; SISO-REF-010 entity types of the bundled aircraft
+  (`JSBSimDisTypes`)
 - `JSBSimInput`: keyboard and gamepad input through InputMap actions
 - Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Planned (see [PLAN.md](PLAN.md)):
-- Publishing the aircraft on a DIS network with godot-dis
 - Prebuilt libraries for Windows, Linux and macOS
 
 ## Requirements
@@ -57,6 +59,22 @@ The ground is a flat plane at `ground_level` (scene y, default 0: the origin's h
 `start_on_ground` to start at rest on the gear; `brake` is 0..1. The aircraft stops and emits `crashed(reason)` when
 a wing or another structure contact touches the ground, a wheel touches down faster than `crash_sink_rate` (4 m/s),
 or it ends up below the ground; `restart()` starts again.
+
+### DIS
+With godot-dis in the project, add a `DisEntity` as a child of the aircraft. The aircraft finds it by class name
+(no build dependency) and sets its `velocity_source` to manual, with JSBSim's velocity, acceleration and angular
+velocity in game time (scaled by `time_scale`, zero while paused or crashed), so receivers dead-reckon the real
+motion; after a crash its appearance is set to destroyed. Use a dead reckoning algorithm with rotation and
+acceleration for aircraft (`dr_algorithm = 4`, RVW) and the same origin for both nodes:
+```gdscript
+var entity := DisEntity.new()
+entity.network_path = ^"../../DisNetwork"
+entity.origin_path = ^"../../DisGeoOrigin"   # also the aircraft's geo_origin_path
+entity.entity_type = JSBSimDisTypes.for_aircraft($Aircraft.aircraft)   # [1, 2, 225, 85, 11, 8, 0] for J3Cub
+entity.marking = "CUB01"
+entity.dr_algorithm = 4
+$Aircraft.add_child(entity)
+```
 
 ### FDM only
 ```gdscript
@@ -100,7 +118,15 @@ godot --headless --path . --import
 godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff
 ```
 Extra options: `--terrain PATH` (package), `--agl M` (start height above the terrain, default 300).
-Planned: on a DIS network with godot-dis.
+
+Both demos publish the aircraft on DIS with `--dis` (godot-dis linked by `tools/link_siblings.py`): multicast
+239.1.2.3, exercise 1, like the godot-dis 2D demo and the godot-geo 3D demo, which show it with the other units.
+`--port N` makes a separate exercise; `--marking TEXT` names it.
+```sh
+godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff --dis --marking CUB01
+tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the network (Open-DIS)
+```
+![The J3Cub (CUB01, civilian air symbol) on the godot-dis tactical map with the demo's own units](docs/images/dis_map.png)
 
 ## Documentation
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI
