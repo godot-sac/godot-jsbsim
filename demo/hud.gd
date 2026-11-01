@@ -1,5 +1,6 @@
 extends CanvasLayer
-## Flight data (top left), key help (bottom left) and an optional JSBSim property panel (F3, right).
+## Flight data (top left), key help (bottom left), an optional JSBSim property panel (F3, right) and a joypad panel
+## (F4, right: connected devices with their raw axes and buttons, to map a flight stick).
 
 const FT := 0.3048
 const PANEL_PROPERTIES := [
@@ -13,13 +14,14 @@ const PANEL_PROPERTIES := [
 ]
 const HELP := ("W/S pitch   A/D roll   Q/E rudder   R/F throttle   B brakes   C camera   P pause   N step   "
 		+ "[ ] time   Backspace reset   F3 properties   Esc quit\n"
-		+ "T autopilot   Y route   , . heading   - = altitude   9 0 speed")
+		+ "T autopilot   Y route   , . heading   - = altitude   9 0 speed   Home/End trim   F4 joypads")
 
 @export var aircraft: JSBSimAircraft
 
 var _data: Label
 var _panel: Label
 var _help: Label
+var _joypads: Label
 
 
 func _ready() -> void:
@@ -34,6 +36,11 @@ func _ready() -> void:
 	_panel.anchor_right = 1.0
 	_panel.offset_left = -430
 	_panel.visible = false
+	_joypads = _label(Vector2(0, 12), 14)
+	_joypads.anchor_left = 1.0
+	_joypads.anchor_right = 1.0
+	_joypads.offset_left = -520
+	_joypads.visible = false
 
 
 ## Data source lines that must stay visible (terrain imagery and elevation licences), bottom right.
@@ -50,9 +57,17 @@ func set_attribution(lines: PackedStringArray) -> void:
 
 func toggle_properties() -> void:
 	_panel.visible = not _panel.visible
+	_joypads.visible = false
+
+
+func toggle_joypads() -> void:
+	_joypads.visible = not _joypads.visible
+	_panel.visible = false
 
 
 func _process(_delta: float) -> void:
+	if _joypads.visible:
+		_joypads.text = _joypad_report()
 	if aircraft == null or not aircraft.is_started():
 		_data.text = "JSBSim model not loaded (see the output)"
 		return
@@ -95,6 +110,27 @@ func _process(_delta: float) -> void:
 			if fdm.has_property(name):
 				rows.append("%-34s %12.4f" % [name, fdm.get_property(name)])
 		_panel.text = "\n".join(rows)
+
+
+## Every connected joypad: name, GUID, raw axes and pressed buttons (Godot's indices, as InputMap uses them).
+func _joypad_report() -> String:
+	var rows := PackedStringArray(["JOYPADS (axis and button numbers for docs/input.md)"])
+	var devices := Input.get_connected_joypads()
+	if devices.is_empty():
+		rows.append("none connected")
+	for device in devices:
+		rows.append("#%d %s" % [device, Input.get_joy_name(device)])
+		rows.append("   guid %s" % Input.get_joy_guid(device))
+		var axes := PackedStringArray()
+		for axis in JOY_AXIS_MAX:
+			axes.append("%d:%+.2f" % [axis, Input.get_joy_axis(device, axis)])
+		rows.append("   axes " + " ".join(axes))
+		var buttons := PackedStringArray()
+		for button in 128:
+			if Input.is_joy_button_pressed(device, button):
+				buttons.append(str(button))
+		rows.append("   buttons " + (" ".join(buttons) if not buttons.is_empty() else "-"))
+	return "\n".join(rows)
 
 
 func _label(at: Vector2, size: int) -> Label:

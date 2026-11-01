@@ -13,8 +13,16 @@ All notable changes to this project are documented here. Versions follow [semver
   flies the route with `--ground --takeoff --route`.
 - `JSBSimAircraft.get_ground_normal()`; a ground node may provide `normal_at(x, z)`, used for JSBSim's gear instead
   of the slope estimate. `get_last_step_count()`, `get_last_step_time_usec()`.
+- `JSBSimInput`: `profile` (`GAMEPAD`, `FLIGHT_STICK` with configurable axis and button numbers),
+  `absolute_throttle` lever actions, pitch trim actions (Home / End), autopilot toggle action (T); the stick leaves
+  the controls to an engaged `JSBSimAutopilot`. Flight demo: F4 joypad panel (devices, raw axes and buttons).
+  `docs/input.md`.
 - Tests: autopilot responses and frame-rate independence (`test_autopilot.gd`), gear on a 5 % slope with the true
-  and a vertical normal, no state between ground queries (`test_slope.gd`); `docs/timing.md`.
+  and a vertical normal, no state between ground queries (`test_slope.gd`), joypad mapping (`test_input.gd`);
+  `docs/timing.md`.
+### Fixed
+- `JSBSimInput` treated a gamepad stick at full deflection as a key and ramped it; the control now follows the
+  device that moved it last.
 - Build chain: JSBSim 1.3.3 as a shared library (`tools/build_jsbsim.py`), the extension linked dynamically
   against it (SCons, godot-cpp 10, exceptions on, shared C runtime on Windows).
 - `JSBSimFDM`: loads a JSBSim model; initial condition with geodetic position and ellipsoid height; `run_ic`, `trim`,

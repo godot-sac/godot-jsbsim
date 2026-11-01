@@ -148,3 +148,28 @@ sınıfla çökmediğini görmek nedeni kesinleştirdi.
 - **`is_valid()` dersi**: hedef nesnesi olmayan callable varsayılan olarak "geçersiz" sayılıyor, `connect()` onu
   reddedip hemen siliyor. İlk denemede bu yüzden sahte bir başarı gördük; günlükte kancanın ne zaman çalıştığına bakmak
   ortaya çıkardı. Ders: düzeltmenin *neden* çalıştığını doğrula.
+
+## İki düğümün birbirini bulması: ham işaretçi ve ağaç olayları (Faz 8)
+`JSBSimAutopilot`, `JSBSimAircraft`'ın çocuğu. Uçak her JSBSim adımından önce otopilotu çağırmalı; her adımda
+çocukları taramak yerine otopilot ağaca girince kendini uçağa kaydediyor (`_enter_tree` → `set_autopilot_node(this)`),
+çıkınca siliyor (`_exit_tree` → `nullptr`).
+
+- **Ham (sahiplenmeyen) işaretçi** `JSBSimAutopilot *`: nesnenin sahibi Godot'nun ağacı; işaretçi yalnızca "şu an
+  orada" bilgisini taşıyor. Güvenli olması, kaydı silen `_exit_tree`'nin düğüm ağaçtan ayrılmadan önce mutlaka
+  çalışmasına dayanıyor. Ömrü bizim kontrolümüzde olmayan bir düğüme uzun süre işaret edeceksek `ObjectID` (Faz 3)
+  daha güvenli.
+- **İleri bildirim** (`class JSBSimAutopilot;`): başlık dosyası yalnızca işaretçi tuttuğu için sınıfın tamamını
+  bilmesine gerek yok; `#include` döngüsü (iki başlığın birbirini içermesi) böyle önlenir. Tam tanım `.cpp`'de
+  içerilir.
+
+## Makro ile tekrar eden kod (Faz 8)
+Otopilotun 40'a yakın ayarı var; her biri için alan + `set_` + `get_` yazmak yerine `AP_PROPERTY(tür, ad, varsayılan)`
+makrosu üçünü birden üretiyor. `##` ön işlemcide ad birleştirme (`set_##m_name` → `set_roll_kp`), `#` ise adı dizeye
+çeviriyor (`#m_name` → `"roll_kp"`, `BIND_AP_PROPERTY`'de). Makro dosyanın sonunda `#undef` ile kaldırılıyor ki başka
+dosyalara sızmasın. Dezavantaj: hata ayıklayıcıda ve hata mesajlarında makronun açılmış hâli görünür; yalnızca gerçekten
+mekanik tekrar için kullan.
+
+## Süre ölçmek: `std::chrono::steady_clock` (Faz 9)
+`advance()` kendi süresini ölçüyor: `steady_clock::now()` farkı `duration<double, std::micro>` ile mikrosaniyeye
+çevriliyor. `steady_clock` hiç geri gitmeyen saattir (sistem saati değişse de); süre ölçmek için doğru seçim
+(`system_clock` takvim saatidir).

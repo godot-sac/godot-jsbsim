@@ -28,7 +28,9 @@ Done:
 - DIS (with godot-dis): a `DisEntity` child publishes the aircraft with JSBSim's own velocity, acceleration and body
   rates for dead reckoning, and as destroyed after a crash; SISO-REF-010 entity types of the bundled aircraft
   (`JSBSimDisTypes`)
-- `JSBSimInput`: keyboard and gamepad input through InputMap actions
+- `JSBSimInput`: keyboard, gamepad and flight stick (HOTAS) input through InputMap actions: `GAMEPAD` and
+  `FLIGHT_STICK` profiles, absolute throttle lever, pitch trim, autopilot toggle; your own Input Map entries win
+  ([docs/input.md](docs/input.md))
 - Bundled aircraft: `J3Cub` (Piper J-3 Cub), unmodified JSBSim data under JSBSim's LGPL-2.1, not MIT (see
   `addons/jsbsim/data/LICENSE.md`); other JSBSim models load from your own data folder
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
@@ -142,6 +144,7 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 ## Documentation
 - [docs/autopilot.md](docs/autopilot.md) — `JSBSimAutopilot`: modes, routes, measured responses, tuning
 - [docs/timing.md](docs/timing.md) — fixed simulation rate, low frame rates, ground contact on slopes
+- [docs/input.md](docs/input.md) — keyboard, gamepad and flight stick mapping, finding a device's axis numbers
 - [docs/aircraft.md](docs/aircraft.md) — using other JSBSim aircraft, where models come from, their licences
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common problems
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI, packaging

@@ -139,14 +139,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				chase_camera.current = true
 		KEY_F3:
 			hud.toggle_properties()
-		KEY_T:
-			if autopilot.enabled:
-				autopilot.enabled = false
-				aircraft.elevator = 0.0
-				pilot.centre()
-			else:
-				_autopilot = null
-				_engage_autopilot(autopilot.follow_route)
+		KEY_F4:
+			hud.toggle_joypads()
 		KEY_Y:
 			if autopilot.get_waypoint_count() == 0:
 				_build_route()
