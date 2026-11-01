@@ -21,3 +21,7 @@ echo "godot: $G"
 "$G" --headless --path . --import >/dev/null 2>&1 || true
 "$G" --headless --path . -s addons/gut/gut_cmdln.gd 2>&1 | grep -E "Passing|Failing|Failed|Pending|worst"
 "$G" --headless --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4 2>&1 | grep -E "FLIGHT_CHECK|ERROR"
+# The user's view: the packed addon in a new, empty project.
+tools/.venv/bin/python -m SCons -j24 target=template_release >/dev/null
+tools/.venv/bin/python tools/package_addon.py --platforms linux
+tools/.venv/bin/python tools/check_package.py build/package/godot-jsbsim-dev.zip --godot "$G" | grep -E "PACKAGE_CHECK|JSBSim|data:"

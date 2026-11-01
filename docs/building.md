@@ -53,9 +53,18 @@ After rebuilding, restart the Godot editor if it had the old libraries loaded.
 
 ## Continuous integration
 `.github/workflows/ci.yml` (not run yet; the repository is not on GitHub): Windows, Linux (Ubuntu 22.04) and macOS
-(universal) build JSBSim and the extension; Windows and Linux run the GUT tests, including the comparison with the
-JSBSim Python package. A final job packs `addons/jsbsim` with all libraries and `COPYING.JSBSim`.
-The Linux steps were checked locally in WSL (Ubuntu 24.04, GCC 13); macOS has not been tried.
+(universal) build JSBSim (cached per JSBSim commit) and the extension, run doctest and the GUT tests, including the
+comparison with the JSBSim Python package (`test_dis.gd` is skipped: godot-dis is not in CI). A final job packs the
+release zip with all libraries (`tools/package_addon.py`) and checks it in a new, empty project on Linux
+(`tools/check_package.py`). The Linux steps were checked locally in WSL (Ubuntu 24.04, GCC 13), including the
+package check; macOS has not been tried.
+
+## Package
+```sh
+python tools/package_addon.py --version 0.1.0          # build/package/godot-jsbsim-0.1.0.zip, built platforms only
+python tools/check_package.py build/package/godot-jsbsim-0.1.0.zip --godot <path to Godot>
+```
+`--platforms windows,linux,macos` makes a missing platform an error (CI does this).
 
 ## Test
 ```powershell

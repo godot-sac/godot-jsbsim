@@ -29,6 +29,10 @@ All notable changes to this project are documented here. Versions follow [semver
   crash; `get_linear_acceleration()`; `JSBSimDisTypes` with the SISO-REF-010 types of the bundled aircraft.
 - `--dis`, `--port`, `--marking` demo options; `tools/link_siblings.py` also links godot-dis; `tools/dis_capture.py`
   decodes the PDUs on the network with Open-DIS.
+- `tools/package_addon.py` (release zip with the libraries of each platform, `LICENSE`, `THIRD_PARTY_NOTICES.md`,
+  `JSBSIM_SOURCE.txt`) and `tools/check_package.py` (installs the zip in a new project and flies the J3Cub).
+- CI: JSBSim build cached per JSBSim commit, GUT on macOS too, the package checked in a new project.
+- Documentation: other aircraft (`docs/aircraft.md`), troubleshooting, replacing the JSBSim library, release steps.
 - `JSBSimInput` (GDScript): keyboard and gamepad input through InputMap actions.
 - Flight demo `demo/flight.tscn` with chase / cockpit cameras, HUD, property panel, debug keys and command-line
   options for automated runs.

@@ -4,7 +4,7 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Work in progress (Phase 4: DIS). No release or prebuilt libraries yet. See [PLAN.md](PLAN.md).
+> 🚧 Pre-release: features for v0.1.0 are done, no release yet. See [PLAN.md](PLAN.md).
 
 ![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
 
@@ -28,8 +28,7 @@ Done:
 - Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
-Planned (see [PLAN.md](PLAN.md)):
-- Prebuilt libraries for Windows, Linux and macOS
+Not yet: a published release with prebuilt libraries (CI builds the package; see [docs/release.md](docs/release.md)).
 
 ## Requirements
 - Godot 4.3 or newer (developed with 4.7.2)
@@ -37,8 +36,14 @@ Planned (see [PLAN.md](PLAN.md)):
 - To build from source: see [docs/building.md](docs/building.md)
 
 ## Installation
-No release yet. Build from source ([docs/building.md](docs/building.md)), then copy `addons/jsbsim/` into your
-project.
+- **Release zip** (once published, or the `godot-jsbsim-*` artifact of a CI run): extract it into your project
+  root; it contains `addons/jsbsim/` with the libraries for Windows, Linux and macOS. Open the project once in the
+  editor (or run `godot --headless --import`) so the classes are registered.
+- **From source:** build ([docs/building.md](docs/building.md)), then copy `addons/jsbsim/` into your project, or
+  pack it with `python tools/package_addon.py`.
+
+The JSBSim library (LGPL-2.1) stays a separate file in `addons/jsbsim/bin/<platform>/`; keep it that way in your
+exported game and ship `COPYING.JSBSim` and `JSBSIM_SOURCE.txt` with it ([docs/licensing.md](docs/licensing.md)).
 
 ## Usage
 ### Aircraft node
@@ -129,7 +134,10 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 ![The J3Cub (CUB01, civilian air symbol) on the godot-dis tactical map with the demo's own units](docs/images/dis_map.png)
 
 ## Documentation
-- [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI
+- [docs/aircraft.md](docs/aircraft.md) — using other JSBSim aircraft, where models come from, their licences
+- [docs/troubleshooting.md](docs/troubleshooting.md) — common problems
+- [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI, packaging
+- [docs/release.md](docs/release.md) — making a release, Asset Library
 - [docs/licensing.md](docs/licensing.md) — LGPL compliance, replacing the JSBSim library, aircraft data
 - [docs/cpp-notes.md](docs/cpp-notes.md) — C++ / GDExtension notes (Turkish)
 

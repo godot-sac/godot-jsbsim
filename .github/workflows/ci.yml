@@ -1,5 +1,6 @@
-# Builds JSBSim (shared library) and the GDExtension for Windows, Linux and macOS, runs the Godot (GUT) tests on
-# Windows and Linux, then packs addons/jsbsim with all libraries as one artifact.
+# Builds JSBSim (shared library, cached per JSBSim commit) and the GDExtension for Windows, Linux and macOS, runs the
+# C++ (doctest) and Godot (GUT) tests on each, then packs addons/jsbsim with all libraries into one zip
+# (tools/package_addon.py) and checks it in a new, empty project (tools/check_package.py).
 name: CI
 
 on:
@@ -24,7 +25,7 @@ jobs:
             jsbsim_args: ""
             scons_args: ""
             godot_zip: Godot_v4.7.2-stable_win64.exe.zip
-            godot_exe: Godot_v4.7.2-stable_win64_console.exe
+            godot_exe: godot_bin/Godot_v4.7.2-stable_win64_console.exe
           - name: Linux
             # The oldest supported runner, so the libraries run on older glibc versions too.
             os: ubuntu-22.04
@@ -32,14 +33,14 @@ jobs:
             jsbsim_args: ""
             scons_args: ""
             godot_zip: Godot_v4.7.2-stable_linux.x86_64.zip
-            godot_exe: Godot_v4.7.2-stable_linux.x86_64
+            godot_exe: godot_bin/Godot_v4.7.2-stable_linux.x86_64
           - name: macOS
             os: macos-latest
             platform: macos
             jsbsim_args: --arch "arm64;x86_64"
             scons_args: arch=universal
-            godot_zip: ""
-            godot_exe: ""
+            godot_zip: Godot_v4.7.2-stable_macos.universal.zip
+            godot_exe: godot_bin/Godot.app/Contents/MacOS/Godot
     defaults:
       run:
         shell: bash
@@ -60,12 +61,15 @@ jobs:
           echo "PY=$PY" >> "$GITHUB_ENV"
           "$PY" -m pip install --quiet -r tools/requirements.txt
 
+      - name: JSBSim commit
+        run: echo "JSBSIM_COMMIT=$(git rev-parse HEAD:thirdparty/jsbsim)" >> "$GITHUB_ENV"
+
+      # The JSBSim build changes only with the submodule commit or the build script; CMake rebuilds nothing then.
       - name: Cache JSBSim build
         uses: actions/cache@v4
         with:
           path: build/jsbsim
-          key: jsbsim-${{ matrix.platform }}-${{ hashFiles('.gitmodules', 'tools/build_jsbsim.py') }}-${{ github.sha }}
-          restore-keys: jsbsim-${{ matrix.platform }}-${{ hashFiles('.gitmodules', 'tools/build_jsbsim.py') }}-
+          key: jsbsim-${{ matrix.platform }}-${{ env.JSBSIM_COMMIT }}-${{ hashFiles('tools/build_jsbsim.py') }}
 
       - name: Build JSBSim (shared library, LGPL-2.1)
         run: '"$PY" tools/build_jsbsim.py --jobs 4 ${{ matrix.jsbsim_args }}'
@@ -81,15 +85,14 @@ jobs:
         run: '"$PY" -m SCons tests'
 
       - name: Download Godot
-        if: matrix.godot_zip != ''
         run: |
           curl -sSfL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${{ matrix.godot_zip }}"
-          "$PY" -m zipfile -e godot.zip godot_bin
-          chmod +x "godot_bin/${{ matrix.godot_exe }}"
-          echo "GODOT=$PWD/godot_bin/${{ matrix.godot_exe }}" >> "$GITHUB_ENV"
+          if [ "${{ matrix.platform }}" = "windows" ]; then "$PY" -m zipfile -e godot.zip godot_bin; else unzip -q godot.zip -d godot_bin; fi
+          chmod +x "${{ matrix.godot_exe }}"
+          echo "GODOT=$PWD/${{ matrix.godot_exe }}" >> "$GITHUB_ENV"
 
+      # The first import may exit with a crash once it is done (Godot 4.7.2 with a GDExtension new to the project).
       - name: Godot tests (GUT)
-        if: matrix.godot_zip != ''
         run: |
           "$GODOT" --headless --path . --import || true
           "$GODOT" --headless --path . -s addons/gut/gut_cmdln.gd
@@ -103,7 +106,9 @@ jobs:
   package:
     name: Addon package
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_ZIP: Godot_v4.7.2-stable_linux.x86_64.zip
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,16 +117,23 @@ jobs:
         with:
           pattern: bin-*
           path: artifacts
-      - name: Assemble addons/jsbsim
+      - name: Pack addons/jsbsim (all platforms)
         run: |
           for platform in windows linux macos; do
             mkdir -p "addons/jsbsim/bin/$platform"
             cp -r "artifacts/bin-$platform/." "addons/jsbsim/bin/$platform/"
           done
-          cp LICENSE THIRD_PARTY_NOTICES.md addons/jsbsim/
-          python3 tools/bundle_aircraft.py --check
-          find addons/jsbsim -type f | sort
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="dev-${GITHUB_SHA::7}"; fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          python3 tools/package_addon.py --version "$VERSION" --platforms windows,linux,macos
+          python3 -m zipfile -l "build/package/godot-jsbsim-$VERSION.zip"
+      - name: Check the package in a new project (Linux)
+        run: |
+          curl -sSfL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${GODOT_ZIP}"
+          unzip -q godot.zip -d godot_bin
+          python3 tools/check_package.py "build/package/godot-jsbsim-$VERSION.zip" --godot "$PWD/godot_bin/${GODOT_ZIP%.zip}"
       - uses: actions/upload-artifact@v4
         with:
-          name: godot-jsbsim-addon
-          path: addons/jsbsim
+          name: godot-jsbsim-${{ env.VERSION }}
+          path: build/package/godot-jsbsim-${{ env.VERSION }}.zip
+          if-no-files-found: error
