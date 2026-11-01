@@ -56,9 +56,15 @@ def main() -> int:
         (project / "smoke.gd").write_text(SMOKE, encoding="utf-8")
         with zipfile.ZipFile(args.package) as archive:
             archive.extractall(project)
-        # The first import of a project may exit with a crash after it is done (seen with Godot 4.7.2 and any
-        # GDExtension that is new to the project); the import itself is complete, so its exit code is ignored.
-        subprocess.run([args.godot, "--headless", "--path", str(project), "--import"], capture_output=True)
+        # The first import discovers the extension mid-session; Godot 4.7 crashes at the end of it unless
+        # src/editor_first_load_guard.cpp works around godotengine/godot#111048, so its exit code is checked.
+        first = subprocess.run([args.godot, "--headless", "--path", str(project), "--import"],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace")
+        print(f"first import: exit {first.returncode}")
+        if first.returncode != 0:
+            print(first.stderr.strip()[-2000:], file=sys.stderr)
+            print("PACKAGE_CHECK FAILED (the first import did not exit cleanly)")
+            return 1
         run = subprocess.run([args.godot, "--headless", "--path", str(project), "-s", "res://smoke.gd"],
                              capture_output=True, text=True, encoding="utf-8", errors="replace")
         print(run.stdout.strip())

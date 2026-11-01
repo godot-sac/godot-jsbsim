@@ -4,12 +4,17 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "editor_first_load_guard.h"
 #include "fdm/jsbsim_aircraft.h"
 #include "fdm/jsbsim_fdm.h"
 
 using namespace godot;
 
 void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		install_editor_first_load_guard();
+		return;
+	}
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
@@ -18,6 +23,10 @@ void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_godot_jsbsim(ModuleInitializationLevel p_level) {
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		remove_editor_first_load_guard();
+		return;
+	}
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}

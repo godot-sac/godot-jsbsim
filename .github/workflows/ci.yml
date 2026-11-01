@@ -91,10 +91,11 @@ jobs:
           chmod +x "${{ matrix.godot_exe }}"
           echo "GODOT=$PWD/${{ matrix.godot_exe }}" >> "$GITHUB_ENV"
 
-      # The first import may exit with a crash once it is done (Godot 4.7.2 with a GDExtension new to the project).
+      # A fresh checkout has no .godot/, so this import discovers the extension mid-session: its exit code checks
+      # the workaround for godotengine/godot#111048 (src/editor_first_load_guard.cpp).
       - name: Godot tests (GUT)
         run: |
-          "$GODOT" --headless --path . --import || true
+          "$GODOT" --headless --path . --import
           "$GODOT" --headless --path . -s addons/gut/gut_cmdln.gd
 
       - uses: actions/upload-artifact@v4

@@ -8,8 +8,10 @@
 - After replacing a library, restart the Godot editor: it does not reload this extension while running.
 
 **The first `godot --headless --import` of a project exits with a crash**
-Seen with Godot 4.7.2 when a GDExtension is new to the project (godot-dis does the same): the crash happens on
-exit, after the import is done. Run the command again; from then on it exits normally.
+A Godot editor bug (godotengine/godot#111048, fix pending in #123658): a headless editor that discovers a
+GDExtension during its first scan can crash on exit, after the import is done. This extension works around it
+(`src/editor_first_load_guard.cpp`). If another extension in the project still triggers it, run the command again;
+from then on the extension is loaded at startup and the editor exits normally.
 
 **"JSBSimFDM: ..." errors when loading a model**
 `get_fdm().get_last_error()` has JSBSim's message. Usually the aircraft name does not match the folder and file
