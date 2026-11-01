@@ -6,6 +6,7 @@
 
 #include "editor_first_load_guard.h"
 #include "fdm/jsbsim_aircraft.h"
+#include "fdm/jsbsim_autopilot.h"
 #include "fdm/jsbsim_fdm.h"
 
 using namespace godot;
@@ -20,6 +21,7 @@ void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
 	}
 	GDREGISTER_CLASS(JSBSimFDM);
 	GDREGISTER_CLASS(JSBSimAircraft);
+	GDREGISTER_CLASS(JSBSimAutopilot);
 }
 
 void uninitialize_godot_jsbsim(ModuleInitializationLevel p_level) {

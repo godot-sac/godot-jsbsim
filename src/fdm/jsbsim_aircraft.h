@@ -10,12 +10,15 @@
 #include "fdm/jsbsim_fdm.h"
 #include "geo/geo_math.h"
 
+class JSBSimAutopilot;
+
 // A JSBSim aircraft in the scene. Steps its JSBSimFDM at a fixed rate from _physics_process (with a time
 // accumulator) and places the node on the tangent plane of a geographic origin: +X east, +Y up, -Z north, 1 unit =
 // 1 metre, the aircraft looking along -Z. The origin is the node at geo_origin_path (anything with latitude,
 // longitude and height properties, e.g. godot-dis DisGeoOrigin) or the node's own origin_* properties.
 // The ground JSBSim's landing gear touches is the node at ground_path (anything with height_at(x, z), e.g. godot-geo
-// GeoTerrain) or, where that has no data, a flat plane at y = ground_level.
+// GeoTerrain, and optionally normal_at(x, z)) or, where that has no data, a flat plane at y = ground_level.
+// A JSBSimAutopilot child, if any, runs before every JSBSim step.
 class JSBSimAircraft : public godot::Node3D {
 	GDCLASS(JSBSimAircraft, godot::Node3D)
 	friend class JSBSimGroundCallback;
@@ -40,12 +43,24 @@ public:
 	bool is_on_ground() const;
 	// Ground height (scene y) below a scene position, as JSBSim sees it.
 	double get_ground_height(double x, double z) const;
+	// Ground normal (scene axes, unit length) at a scene position, as JSBSim sees it: the ground node's
+	// normal_at(x, z) if it has one, otherwise from the slope of the heights 1 m around the point.
+	godot::Vector3 get_ground_normal(double x, double z) const;
 	// Advances the simulation by `delta` seconds of game time (scaled by time_scale) and updates the transform.
 	// Called by _physics_process unless paused; call it directly to drive the aircraft yourself. Returns the
 	// number of JSBSim steps done.
 	int advance(double delta);
 
 	godot::Ref<JSBSimFDM> get_fdm() const { return fdm; }
+	// The JSBSimAutopilot child, or null.
+	JSBSimAutopilot *get_autopilot() const { return autopilot; }
+	// Called by JSBSimAutopilot when it enters or leaves the tree under this node.
+	void set_autopilot_node(JSBSimAutopilot *node) { autopilot = node; }
+	// The scene's tangent-plane frame (valid after start()).
+	const gjsb::geo::LocalFrame &local_frame() const { return frame; }
+	// JSBSim steps done by the last advance() and the time they took (microseconds, wall clock).
+	int get_last_step_count() const { return last_step_count; }
+	double get_last_step_time_usec() const { return last_step_time_usec; }
 	// Velocity and acceleration relative to the ground in scene axes (m/s, m/s²); angular velocity in scene axes
 	// (rad/s). In simulation time: multiply by time_scale for game time.
 	godot::Vector3 get_linear_velocity() const { return linear_velocity; }
@@ -119,6 +134,7 @@ protected:
 private:
 	bool apply_initial_condition();
 	void apply_controls();
+	gjsb::geo::Vec3 ground_normal(double x, double z) const;
 	// Checks the ground contacts after a step; sets `crashed` and emits the signal.
 	void check_crash();
 	// Returns false (and stops the aircraft) if the JSBSim state is invalid.
@@ -143,6 +159,7 @@ private:
 	bool crash_detection = true;
 	double crash_sink_rate = 4.0; // m/s: faster touchdowns are crashes
 	godot::ObjectID ground_id;
+	bool ground_has_normal = false; // the ground node has normal_at(x, z)
 
 	godot::NodePath geo_origin_path;
 	double origin_latitude = 39.95;
@@ -163,7 +180,10 @@ private:
 	double brake = 0.0; // 0..1, both main wheels
 
 	godot::Ref<JSBSimFDM> fdm;
+	JSBSimAutopilot *autopilot = nullptr;
 	gjsb::geo::LocalFrame frame;
+	int last_step_count = 0;
+	double last_step_time_usec = 0.0;
 	bool started = false;
 	bool failed = false;
 	bool crashed = false;

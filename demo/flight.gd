@@ -11,7 +11,11 @@ extends Node3D
 ##   --screenshot PATH   save a PNG just before quitting (needs a window, not --headless)
 ##   --cockpit           start with the cockpit camera
 ##   --aileron X         hold a fixed aileron command (input tests)
-##   --takeoff           FlightAutopilot takes off (with --ground) and climbs straight ahead
+##   --takeoff           FlightAutopilot takes off (with --ground) and climbs straight ahead; with --route the
+##                       JSBSimAutopilot takes over 150 m above the ground
+##   --autopilot         JSBSimAutopilot holds the start heading, height and airspeed
+##   --route             JSBSimAutopilot flies a 4 x 2 km loop ahead of the start, --route-agl above the start ground
+##   --route-agl M       height of the route above the start ground (default 500)
 ##   --dis               publish the aircraft on a DIS network with godot-dis (link it with tools/link_siblings.py):
 ##                       multicast 239.1.2.3, exercise 1, like the godot-dis and godot-geo demos
 ##   --port N            DIS port (default 3000); another port is a separate exercise, e.g. for tests
@@ -26,6 +30,7 @@ const SCATTER_RADIUS := 15000.0
 @onready var cockpit_camera: Camera3D = $Aircraft/CockpitCamera
 @onready var hud: CanvasLayer = $HUD
 @onready var ground: MeshInstance3D = get_node_or_null("Ground")
+@onready var autopilot: JSBSimAutopilot = $Aircraft/Autopilot
 
 var _options := {}
 var _quit_at := -1.0
@@ -37,6 +42,8 @@ var _log_timer := 0.0
 var _fixed_aileron := NAN
 var _autopilot: FlightAutopilot
 var _dis_entity: Node  # godot-dis DisEntity, created by name so the demo runs without godot-dis
+var _start_ground := 0.0  # scene y of the ground under the start
+var _waypoints_reached := 0
 
 
 func _ready() -> void:
@@ -64,6 +71,12 @@ func _ready() -> void:
 		_autopilot.heading = aircraft.heading
 		_autopilot.vertical_speed = 2.0
 		pilot.process_mode = Node.PROCESS_MODE_DISABLED
+	_start_ground = aircraft.get_ground_height(aircraft.position.x, aircraft.position.z)
+	autopilot.waypoint_reached.connect(_on_waypoint_reached)
+	if _options.has("route"):
+		_build_route()
+	if (_options.has("autopilot") or _options.has("route")) and not _autopilot:
+		_engage_autopilot(_options.has("route"))
 	aircraft.failed.connect(_on_stopped)
 	aircraft.crashed.connect(_on_stopped)
 	_start_position = aircraft.position
@@ -77,6 +90,11 @@ func _physics_process(delta: float) -> void:
 		aircraft.aileron = _fixed_aileron
 	if _autopilot and not aircraft.paused:
 		_autopilot.takeoff()
+		var height_agl := aircraft.position.y - aircraft.get_ground_height(aircraft.position.x, aircraft.position.z)
+		if _options.has("route") and height_agl > 150.0:
+			print("takeoff done at t=%.1f s, the autopilot flies the route" % aircraft.get_fdm().get_sim_time())
+			_autopilot = null
+			_engage_autopilot(true)
 	# Keep the ground mesh under the aircraft; the grid shader works in world space, so the lines stay put.
 	if ground:
 		ground.position = Vector3(snappedf(aircraft.position.x, 1000.0), aircraft.ground_level,
@@ -121,6 +139,38 @@ func _unhandled_input(event: InputEvent) -> void:
 				chase_camera.current = true
 		KEY_F3:
 			hud.toggle_properties()
+		KEY_T:
+			if autopilot.enabled:
+				autopilot.enabled = false
+				aircraft.elevator = 0.0
+				pilot.centre()
+			else:
+				_autopilot = null
+				_engage_autopilot(autopilot.follow_route)
+		KEY_Y:
+			if autopilot.get_waypoint_count() == 0:
+				_build_route()
+			if autopilot.get_active_waypoint() < 0:
+				autopilot.set_active_waypoint(0)
+			autopilot.follow_route = not autopilot.follow_route
+			if not autopilot.enabled:
+				_engage_autopilot(autopilot.follow_route)
+		KEY_COMMA:
+			autopilot.heading_hold = true
+			autopilot.follow_route = false
+			autopilot.target_heading = fposmod(autopilot.target_heading - 10.0, 360.0)
+		KEY_PERIOD:
+			autopilot.heading_hold = true
+			autopilot.follow_route = false
+			autopilot.target_heading = fposmod(autopilot.target_heading + 10.0, 360.0)
+		KEY_MINUS:
+			autopilot.target_altitude -= 50.0
+		KEY_EQUAL:
+			autopilot.target_altitude += 50.0
+		KEY_9:
+			autopilot.target_speed -= 5.0
+		KEY_0:
+			autopilot.target_speed += 5.0
 		KEY_ESCAPE:
 			get_tree().quit()
 
@@ -162,6 +212,40 @@ func _setup_dis() -> void:
 			_dis_entity.get_effective_entity_id(), _dis_entity.entity_type, network.port])
 
 
+## Turns the JSBSimAutopilot on with the current heading and airspeed; following the route, at its height.
+## Keyboard and gamepad stay connected (throttle and brakes; the autopilot overrides the stick) unless the run is
+## automated (--autopilot, --route).
+func _engage_autopilot(follow_route: bool) -> void:
+	if _options.has("route") or _options.has("autopilot"):
+		pilot.process_mode = Node.PROCESS_MODE_DISABLED
+	autopilot.engage()
+	if follow_route and autopilot.get_waypoint_count() > 0:
+		autopilot.target_altitude = autopilot.get_waypoint(0).height
+		autopilot.target_speed = maxf(autopilot.target_speed, aircraft.airspeed)  # not the climb speed
+		autopilot.follow_route = true
+	print("autopilot on: hdg %.0f, alt %.0f m, %.0f kt, route %s" % [autopilot.target_heading,
+			autopilot.target_altitude, autopilot.target_speed, autopilot.follow_route])
+
+
+## A 4 x 2 km loop: 3 km ahead of the start, 2 km to the right, back past the start, --route-agl above the start
+## ground (scene y, which the autopilot keeps as a height above the ellipsoid).
+func _build_route() -> void:
+	var forward := Vector3(sin(deg_to_rad(aircraft.heading)), 0.0, -cos(deg_to_rad(aircraft.heading)))
+	var right := Vector3(-forward.z, 0.0, forward.x)
+	var y := _start_ground + float(_options.get("route-agl", 500.0))
+	var start := Vector3(aircraft.position.x, y, aircraft.position.z)
+	autopilot.clear_route()
+	for offset: Vector2 in [Vector2(0, 3000), Vector2(2000, 3000), Vector2(2000, -1000), Vector2(0, -1000)]:
+		autopilot.add_waypoint_local(start + right * offset.x + forward * offset.y)
+	autopilot.loop_route = true
+	print("route: %d waypoints, %.0f m above the start ground" % [autopilot.get_waypoint_count(), y - _start_ground])
+
+
+func _on_waypoint_reached(index: int) -> void:
+	_waypoints_reached += 1
+	print("waypoint %d reached at t=%.1f s" % [index, aircraft.get_fdm().get_sim_time()])
+
+
 ## The scenery around the aircraft; terrain_flight.gd replaces it with real terrain.
 func _setup_world() -> void:
 	_scatter_landmarks()
@@ -188,12 +272,12 @@ func _finish() -> void:
 	var distance := aircraft.position.distance_to(_start_position)
 	var ok := aircraft.is_started() and not aircraft.is_failed() and not aircraft.is_crashed()
 	print(("FLIGHT_CHECK %s aircraft=%s sim_time=%.2f distance=%.0f m agl=%.1f..%.1f m ias=%.1f kt hdg=%.1f "
-			+ "on_ground=%s crashed=%s dis_sent=%d") % [
+			+ "on_ground=%s crashed=%s dis_sent=%d autopilot=%s waypoints=%d") % [
 		"ok" if ok else "FAILED", aircraft.aircraft, fdm.get_sim_time() if fdm.is_loaded() else 0.0, distance,
 		_min_agl, _max_agl, fdm.get_property("velocities/vc-kts") if fdm.is_loaded() else 0.0,
 		fposmod(fdm.get_property("attitude/psi-deg"), 360.0) if fdm.is_loaded() else 0.0,
 		aircraft.is_on_ground() if fdm.is_loaded() else false, aircraft.is_crashed(),
-		_dis_entity.get_published_count() if _dis_entity else -1])
+		_dis_entity.get_published_count() if _dis_entity else -1, autopilot.enabled, _waypoints_reached])
 	if _options.has("screenshot"):
 		await RenderingServer.frame_post_draw
 		var path: String = _options.screenshot

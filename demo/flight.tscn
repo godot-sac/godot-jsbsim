@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://demo/flight.gd" id="1_flight"]
 [ext_resource type="Script" path="res://demo/aircraft_model.gd" id="2_model"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://demo/chase_camera.gd" id="4_chase"]
 [ext_resource type="Script" path="res://demo/hud.gd" id="5_hud"]
 [ext_resource type="Shader" path="res://demo/ground.gdshader" id="6_ground"]
+[ext_resource type="Script" path="res://demo/route_markers.gd" id="7_route"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -65,6 +66,8 @@ script = ExtResource("2_model")
 [node name="Input" type="Node" parent="Aircraft"]
 script = ExtResource("3_input")
 
+[node name="Autopilot" type="JSBSimAutopilot" parent="Aircraft"]
+
 [node name="CockpitCamera" type="Camera3D" parent="Aircraft"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.4)
 cull_mask = 1048573
@@ -77,6 +80,10 @@ current = true
 far = 60000.0
 script = ExtResource("4_chase")
 target = NodePath("../Aircraft")
+
+[node name="RouteMarkers" type="Node3D" parent="." node_paths=PackedStringArray("autopilot")]
+script = ExtResource("7_route")
+autopilot = NodePath("../Aircraft/Autopilot")
 
 [node name="HUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("aircraft")]
 script = ExtResource("5_hud")

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Versions follow [semver
 
 ## [Unreleased]
 ### Added
+- `JSBSimAutopilot` node (child of `JSBSimAircraft`): heading / altitude / airspeed / vertical-speed holds, waypoint
+  routes by geodetic or scene position with per-waypoint height and speed, ground-track guidance with crosswind
+  correction and turn anticipation, `loop_route`, `waypoint_reached` and `route_finished` signals, stall protection,
+  bumpless engagement, `engage()`. Runs before every JSBSim step. `docs/autopilot.md`.
+- Flight demo: autopilot keys (T, Y, `,` `.`, `-` `=`, `9` `0`), `--autopilot`, `--route`, `--route-agl`, route
+  markers, autopilot line in the HUD and `autopilot` / `waypoints` in `FLIGHT_CHECK`; the terrain demo takes off and
+  flies the route with `--ground --takeoff --route`.
+- `JSBSimAircraft.get_ground_normal()`; a ground node may provide `normal_at(x, z)`, used for JSBSim's gear instead
+  of the slope estimate. `get_last_step_count()`, `get_last_step_time_usec()`.
+- Tests: autopilot responses and frame-rate independence (`test_autopilot.gd`), gear on a 5 % slope with the true
+  and a vertical normal, no state between ground queries (`test_slope.gd`); `docs/timing.md`.
 - Build chain: JSBSim 1.3.3 as a shared library (`tools/build_jsbsim.py`), the extension linked dynamically
   against it (SCons, godot-cpp 10, exceptions on, shared C runtime on Windows).
 - `JSBSimFDM`: loads a JSBSim model; initial condition with geodetic position and ellipsoid height; `run_ic`, `trim`,

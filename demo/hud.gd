@@ -12,7 +12,8 @@ const PANEL_PROPERTIES := [
 	"propulsion/engine/thrust-lbs", "forces/fbz-aero-lbs", "simulation/sim-time-sec",
 ]
 const HELP := ("W/S pitch   A/D roll   Q/E rudder   R/F throttle   B brakes   C camera   P pause   N step   "
-		+ "[ ] time   Backspace reset   F3 properties   Esc quit")
+		+ "[ ] time   Backspace reset   F3 properties   Esc quit\n"
+		+ "T autopilot   Y route   , . heading   - = altitude   9 0 speed")
 
 @export var aircraft: JSBSimAircraft
 
@@ -27,7 +28,7 @@ func _ready() -> void:
 	_help.text = HELP
 	_help.anchor_top = 1.0
 	_help.anchor_bottom = 1.0
-	_help.offset_top = -30
+	_help.offset_top = -50
 	_panel = _label(Vector2(0, 12), 14)
 	_panel.anchor_left = 1.0
 	_panel.anchor_right = 1.0
@@ -75,6 +76,18 @@ func _process(_delta: float) -> void:
 		"STICK ail %+.2f  elev %+.2f  rud %+.2f" % [aircraft.aileron, aircraft.elevator, aircraft.rudder],
 		"TIME  %6.1f s" % fdm.get_sim_time(),
 	])
+	var ap := aircraft.get_autopilot()
+	if ap and ap.enabled:
+		var modes := "HDG %03.0f" % ap.target_heading if ap.heading_hold and not ap.follow_route else "WINGS LEVEL"
+		if ap.follow_route and ap.get_active_waypoint() >= 0:
+			modes = "ROUTE wp %d/%d  %.1f km  xtk %+.0f m  trk %03.0f" % [ap.get_active_waypoint() + 1,
+					ap.get_waypoint_count(), ap.get_distance_to_waypoint() / 1000.0, ap.get_cross_track_error(),
+					ap.get_desired_track()]
+		lines.append("AP    %s   ALT %s   SPD %s" % [modes,
+				"%.0f m" % ap.target_altitude if ap.altitude_hold else "VS %+.1f" % ap.target_vertical_speed,
+				"%.0f kt" % ap.target_speed if ap.speed_hold else "manual"])
+	else:
+		lines.append("AP    off")
 	_data.text = "\n".join(lines)
 	if _panel.visible:
 		var rows := PackedStringArray()

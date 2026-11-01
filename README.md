@@ -17,7 +17,11 @@ Done:
 - Works in exported games: the XML data is extracted from the `.pck` to `user://` on first use
 - `JSBSimAircraft` node: steps JSBSim at a fixed rate (120 Hz) from `_physics_process`, places the aircraft in the
   local frame of a geographic origin (+X east, +Y up, −Z north, metres; the same frame as godot-dis `DisGeoOrigin`),
-  trims on start, takes stick / pedal / throttle / brake commands, time scale and pause
+  trims on start, takes stick / pedal / throttle / brake commands, time scale and pause; the controls act at every
+  JSBSim step, so a flight is the same at any frame rate ([docs/timing.md](docs/timing.md))
+- `JSBSimAutopilot`: heading, height, airspeed and vertical-speed holds and waypoint routes (ground track along each
+  leg, crosswind corrected, turn anticipation, loops, signals) for any model, no aircraft XML changes
+  ([docs/autopilot.md](docs/autopilot.md))
 - Ground contact: JSBSim's landing gear touches the scene's ground, flat or any node with `height_at(x, z)` such as
   godot-geo `GeoTerrain`; start at rest on the ground, take off, land; crash detection (`crashed` signal) when a wing
   or other structure touches the ground or the gear hits it too fast
@@ -108,9 +112,11 @@ print(fdm.get_property("position/geod-alt-ft"), " ft")
 ## Demos
 `demo/flight.tscn` (the main scene): a J3Cub trimmed at 1500 m over flat ground near Ankara Esenboğa, with chase and
 cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, C camera, P pause, N single step,
-`[` `]` time scale, Backspace reset, F3 property panel. Command-line options for tests (after `--`): `--seconds N`
-(prints a `FLIGHT_CHECK` line and quits), `--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff`
-(a simple autopilot takes off and climbs), `--aileron X`, `--cockpit`, `--aircraft NAME`, `--screenshot PATH`.
+`[` `]` time scale, Backspace reset, F3 property panel; T autopilot, Y route, `,` `.` heading, `-` `=` height, `9`
+`0` speed. Command-line options for tests (after `--`): `--seconds N` (prints a `FLIGHT_CHECK` line and quits),
+`--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff` (a simple autopilot takes off and climbs),
+`--autopilot`, `--route` (`JSBSimAutopilot` flies a 4 × 2 km loop; after `--takeoff` once airborne), `--aileron X`,
+`--cockpit`, `--aircraft NAME`, `--screenshot PATH`.
 ```sh
 godot --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4
 ```
@@ -134,6 +140,8 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 ![The J3Cub (CUB01, civilian air symbol) on the godot-dis tactical map with the demo's own units](docs/images/dis_map.png)
 
 ## Documentation
+- [docs/autopilot.md](docs/autopilot.md) — `JSBSimAutopilot`: modes, routes, measured responses, tuning
+- [docs/timing.md](docs/timing.md) — fixed simulation rate, low frame rates, ground contact on slopes
 - [docs/aircraft.md](docs/aircraft.md) — using other JSBSim aircraft, where models come from, their licences
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common problems
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI, packaging

@@ -1,6 +1,7 @@
 #include "jsbsim_aircraft.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 #include <godot_cpp/classes/engine.hpp>
@@ -20,6 +21,8 @@
 #include <models/FGInertial.h>
 #include <models/FGLGear.h>
 #include <models/FGPropagate.h>
+
+#include "fdm/jsbsim_autopilot.h"
 
 using namespace godot;
 using namespace gjsb::geo;
@@ -99,12 +102,12 @@ public:
 		contact = JSBSim::FGLocation(JSBSim::FGColumnVector3(ground.x, ground.y, ground.z));
 		contact.SetEllipse(semimajor, semiminor);
 		const double agl = p.y - h;
-		// The normal only matters near the ground: there it comes from the slope (central differences, 1 m).
+		// The normal only matters near the ground (JSBSim's gear model uses it for the strut direction and the
+		// compression speed: a vertical normal on a slope gives false damping, JSBSim discussion #1510).
+		// Everything is computed from this call's location only: no state is kept between calls.
 		Vec3 up{ 0.0, 1.0, 0.0 };
 		if (agl < NORMAL_RANGE) {
-			const double dx = (owner->get_ground_height(p.x + 1.0, p.z) - owner->get_ground_height(p.x - 1.0, p.z)) * 0.5;
-			const double dz = (owner->get_ground_height(p.x, p.z + 1.0) - owner->get_ground_height(p.x, p.z - 1.0)) * 0.5;
-			up = Vec3{ -dx, 1.0, -dz } * (1.0 / std::sqrt(dx * dx + 1.0 + dz * dz));
+			up = owner->ground_normal(p.x, p.z);
 		}
 		const Vec3 n = frame.rotation() * godot_to_enu(up);
 		normal = JSBSim::FGColumnVector3(n.x, n.y, n.z);
@@ -167,12 +170,14 @@ bool JSBSimAircraft::apply_initial_condition() {
 	frame = LocalFrame({ Math::deg_to_rad(lat), Math::deg_to_rad(lon), h });
 
 	ground_id = ObjectID();
+	ground_has_normal = false;
 	if (!ground_path.is_empty()) {
 		Node *ground = get_node_or_null(ground_path);
 		ERR_FAIL_NULL_V_MSG(ground, false, "JSBSimAircraft: ground_path does not point to a node.");
 		ERR_FAIL_COND_V_MSG(!ground->has_method("height_at"), false,
 				"JSBSimAircraft: the ground_path node has no height_at(x, z) method.");
 		ground_id = ground->get_instance_id();
+		ground_has_normal = ground->has_method("normal_at");
 	}
 
 	JSBSim::FGFDMExec *exec = fdm->get_exec();
@@ -269,13 +274,20 @@ int JSBSimAircraft::advance(double delta) {
 	} else {
 		accumulator = std::max(0.0, accumulator - count * dt);
 	}
+	last_step_count = 0;
+	last_step_time_usec = 0.0;
 	if (count == 0) {
 		return 0;
 	}
-	apply_controls();
+	const auto start_time = std::chrono::steady_clock::now();
 	int done = 0;
-	// One step at a time, so a crash stops the aircraft at the step it happens.
+	// One step at a time, so a crash stops the aircraft at the step it happens, and the autopilot and the controls
+	// act at every step (the same trajectory at any frame rate).
 	while (done < count && !crashed) {
+		if (autopilot) {
+			autopilot->update(dt);
+		}
+		apply_controls();
 		if (fdm->step(1) != 1) {
 			break;
 		}
@@ -285,6 +297,9 @@ int JSBSimAircraft::advance(double delta) {
 		}
 	}
 	update_transform();
+	last_step_count = done;
+	last_step_time_usec =
+			std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - start_time).count();
 	advanced = done > 0;
 	update_dis_entities();
 	return done;
@@ -329,6 +344,27 @@ double JSBSimAircraft::get_ground_height(double x, double z) const {
 		}
 	}
 	return ground_level;
+}
+
+Vec3 JSBSimAircraft::ground_normal(double x, double z) const {
+	if (ground_has_normal && ground_id.is_valid()) {
+		Object *ground = ObjectDB::get_instance(ground_id);
+		if (ground) {
+			const Vector3 n = ground->call("normal_at", x, z);
+			const double length = n.length();
+			if (std::isfinite(length) && length > 1e-6 && n.y > 0.0) {
+				return Vec3{ n.x, n.y, n.z } * (1.0 / length);
+			}
+		}
+	}
+	// Central differences over 1 m: inside one cell of a gridded terrain, the cell's own slope.
+	const double dx = (get_ground_height(x + 1.0, z) - get_ground_height(x - 1.0, z)) * 0.5;
+	const double dz = (get_ground_height(x, z + 1.0) - get_ground_height(x, z - 1.0)) * 0.5;
+	return Vec3{ -dx, 1.0, -dz } * (1.0 / std::sqrt(dx * dx + 1.0 + dz * dz));
+}
+
+Vector3 JSBSimAircraft::get_ground_normal(double x, double z) const {
+	return to_vector3(ground_normal(x, z));
 }
 
 bool JSBSimAircraft::is_on_ground() const {
@@ -459,6 +495,10 @@ void JSBSimAircraft::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_crashed"), &JSBSimAircraft::is_crashed);
 	ClassDB::bind_method(D_METHOD("is_on_ground"), &JSBSimAircraft::is_on_ground);
 	ClassDB::bind_method(D_METHOD("get_ground_height", "x", "z"), &JSBSimAircraft::get_ground_height);
+	ClassDB::bind_method(D_METHOD("get_ground_normal", "x", "z"), &JSBSimAircraft::get_ground_normal);
+	ClassDB::bind_method(D_METHOD("get_autopilot"), &JSBSimAircraft::get_autopilot);
+	ClassDB::bind_method(D_METHOD("get_last_step_count"), &JSBSimAircraft::get_last_step_count);
+	ClassDB::bind_method(D_METHOD("get_last_step_time_usec"), &JSBSimAircraft::get_last_step_time_usec);
 	ADD_SIGNAL(MethodInfo("failed", PropertyInfo(Variant::STRING, "reason")));
 	ADD_SIGNAL(MethodInfo("crashed", PropertyInfo(Variant::STRING, "reason")));
 	ClassDB::bind_method(D_METHOD("advance", "delta"), &JSBSimAircraft::advance);
