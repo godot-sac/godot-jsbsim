@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://demo/flight.tscn" id="1_flight"]
+[ext_resource type="Script" path="res://demo/terrain_flight.gd" id="2_terrain"]
+
+[node name="TerrainFlight" instance=ExtResource("1_flight")]
+script = ExtResource("2_terrain")

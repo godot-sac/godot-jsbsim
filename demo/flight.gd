@@ -1,14 +1,17 @@
 extends Node3D
 ## Flight demo: a JSBSim aircraft over flat ground near Ankara Esenboğa, keyboard / gamepad input, chase and cockpit
-## cameras, HUD and debug keys.
+## cameras, HUD and debug keys. demo/terrain_flight.gd extends it with real terrain.
 ##
 ## Command line (after `--`):
 ##   --aircraft NAME     model from addons/jsbsim/data (default J3Cub)
-##   --seconds N         quit after N seconds of game time; prints a FLIGHT_CHECK line (exit code 1 on failure)
+##   --ground            start at rest on the ground (throttle up with R, brakes with B)
+##   --seconds N         quit after N seconds of game time; prints a FLIGHT_CHECK line (exit code 1 on failure or
+##                       crash)
 ##   --time-scale X      simulation speed (fast-forward tests)
 ##   --screenshot PATH   save a PNG just before quitting (needs a window, not --headless)
 ##   --cockpit           start with the cockpit camera
 ##   --aileron X         hold a fixed aileron command (input tests)
+##   --takeoff           FlightAutopilot takes off (with --ground) and climbs straight ahead
 
 const SCATTER_COUNT := 600
 const SCATTER_RADIUS := 15000.0
@@ -18,24 +21,28 @@ const SCATTER_RADIUS := 15000.0
 @onready var chase_camera: Camera3D = $ChaseCamera
 @onready var cockpit_camera: Camera3D = $Aircraft/CockpitCamera
 @onready var hud: CanvasLayer = $HUD
-@onready var ground: MeshInstance3D = $Ground
+@onready var ground: MeshInstance3D = get_node_or_null("Ground")
 
 var _options := {}
 var _quit_at := -1.0
 var _game_time := 0.0
 var _start_position := Vector3.ZERO
-var _min_height := INF
-var _max_height := -INF
+var _min_agl := INF
+var _max_agl := -INF
 var _log_timer := 0.0
 var _fixed_aileron := NAN
+var _autopilot: FlightAutopilot
 
 
 func _ready() -> void:
 	_options = _parse_args(OS.get_cmdline_user_args())
 	if _options.has("aircraft"):
 		aircraft.aircraft = _options.aircraft
-		if not aircraft.start():
-			push_error("Cannot load %s: %s" % [_options.aircraft, aircraft.get_fdm().get_last_error()])
+	aircraft.start_on_ground = _options.has("ground")
+	_setup_world()
+	# The aircraft started in its own _ready(), before the options and the world were set up.
+	if not aircraft.start():
+		push_error("Cannot start %s: %s" % [aircraft.aircraft, aircraft.get_fdm().get_last_error()])
 	if _options.has("time-scale"):
 		aircraft.time_scale = float(_options["time-scale"])
 	if _options.has("seconds"):
@@ -45,8 +52,13 @@ func _ready() -> void:
 		pilot.process_mode = Node.PROCESS_MODE_DISABLED
 	if _options.has("cockpit"):
 		cockpit_camera.current = true
-	aircraft.failed.connect(_on_failed)
-	_scatter_landmarks()
+	if _options.has("takeoff"):
+		_autopilot = FlightAutopilot.new(aircraft)
+		_autopilot.heading = aircraft.heading
+		_autopilot.vertical_speed = 2.0
+		pilot.process_mode = Node.PROCESS_MODE_DISABLED
+	aircraft.failed.connect(_on_stopped)
+	aircraft.crashed.connect(_on_stopped)
 	_start_position = aircraft.position
 	chase_camera.snap()
 	print("flight demo: %s, started=%s, data=%s" % [aircraft.aircraft, aircraft.is_started(),
@@ -56,13 +68,18 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not is_nan(_fixed_aileron):
 		aircraft.aileron = _fixed_aileron
+	if _autopilot and not aircraft.paused:
+		_autopilot.takeoff()
 	# Keep the ground mesh under the aircraft; the grid shader works in world space, so the lines stay put.
-	ground.position = Vector3(snappedf(aircraft.position.x, 1000.0), 0.0, snappedf(aircraft.position.z, 1000.0))
-	if aircraft.paused:
+	if ground:
+		ground.position = Vector3(snappedf(aircraft.position.x, 1000.0), aircraft.ground_level,
+				snappedf(aircraft.position.z, 1000.0))
+	if aircraft.paused or not aircraft.is_started():
 		return
 	_game_time += delta * aircraft.time_scale
-	_min_height = minf(_min_height, aircraft.position.y)
-	_max_height = maxf(_max_height, aircraft.position.y)
+	var agl := aircraft.get_fdm().get_property("position/h-agl-ft") * 0.3048
+	_min_agl = minf(_min_agl, agl)
+	_max_agl = maxf(_max_agl, agl)
 	_log_timer += delta * aircraft.time_scale
 	if _log_timer >= 10.0:
 		_log_timer = 0.0
@@ -101,7 +118,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().quit()
 
 
-func _on_failed(reason: String) -> void:
+## The scenery around the aircraft; terrain_flight.gd replaces it with real terrain.
+func _setup_world() -> void:
+	_scatter_landmarks()
+
+
+func _on_stopped(reason: String) -> void:
 	print("aircraft stopped: ", reason)
 	if _quit_at >= 0.0:  # a --seconds run ends here instead of waiting
 		_quit_at = -1.0
@@ -119,11 +141,13 @@ func _log_state() -> void:
 func _finish() -> void:
 	var fdm := aircraft.get_fdm()
 	var distance := aircraft.position.distance_to(_start_position)
-	var ok := aircraft.is_started() and not aircraft.is_failed() and _min_height > 0.0
-	print("FLIGHT_CHECK %s aircraft=%s sim_time=%.2f distance=%.0f m height=%.1f..%.1f m ias=%.1f kt hdg=%.1f" % [
+	var ok := aircraft.is_started() and not aircraft.is_failed() and not aircraft.is_crashed()
+	print(("FLIGHT_CHECK %s aircraft=%s sim_time=%.2f distance=%.0f m agl=%.1f..%.1f m ias=%.1f kt hdg=%.1f "
+			+ "on_ground=%s crashed=%s") % [
 		"ok" if ok else "FAILED", aircraft.aircraft, fdm.get_sim_time() if fdm.is_loaded() else 0.0, distance,
-		_min_height, _max_height, fdm.get_property("velocities/vc-kts") if fdm.is_loaded() else 0.0,
-		fposmod(fdm.get_property("attitude/psi-deg"), 360.0) if fdm.is_loaded() else 0.0])
+		_min_agl, _max_agl, fdm.get_property("velocities/vc-kts") if fdm.is_loaded() else 0.0,
+		fposmod(fdm.get_property("attitude/psi-deg"), 360.0) if fdm.is_loaded() else 0.0,
+		aircraft.is_on_ground() if fdm.is_loaded() else false, aircraft.is_crashed()])
 	if _options.has("screenshot"):
 		await RenderingServer.frame_post_draw
 		var path: String = _options.screenshot

@@ -4,10 +4,9 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Work in progress (Phase 2: aircraft node and flight demo). Flat ground only; no terrain or DIS yet.
-> See [PLAN.md](PLAN.md).
+> 🚧 Work in progress (Phase 3: ground and terrain). No DIS output yet. See [PLAN.md](PLAN.md).
 
-![J3Cub over the flat demo ground near Ankara Esenboğa, chase camera and HUD](docs/images/flight_chase.png)
+![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
 
 ## Features
 Done:
@@ -18,14 +17,15 @@ Done:
 - Works in exported games: the XML data is extracted from the `.pck` to `user://` on first use
 - `JSBSimAircraft` node: steps JSBSim at a fixed rate (120 Hz) from `_physics_process`, places the aircraft in the
   local frame of a geographic origin (+X east, +Y up, −Z north, metres; the same frame as godot-dis `DisGeoOrigin`),
-  trims on start, takes stick / pedal / throttle commands, time scale and pause; stops cleanly if the JSBSim state
-  becomes invalid (crash)
+  trims on start, takes stick / pedal / throttle / brake commands, time scale and pause
+- Ground contact: JSBSim's landing gear touches the scene's ground, flat or any node with `height_at(x, z)` such as
+  godot-geo `GeoTerrain`; start at rest on the ground, take off, land; crash detection (`crashed` signal) when a wing
+  or other structure touches the ground or the gear hits it too fast
 - `JSBSimInput`: keyboard and gamepad input through InputMap actions
 - Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Planned (see [PLAN.md](PLAN.md)):
-- Ground contact on flat ground or on any terrain with `height_at(x, z)` (e.g. godot-geo `GeoTerrain`)
 - Publishing the aircraft on a DIS network with godot-dis
 - Prebuilt libraries for Windows, Linux and macOS
 
@@ -52,7 +52,11 @@ $Aircraft.rudder = 0.0       # -1..1, + is the right pedal
 $Aircraft.throttle = 0.8     # 0..1
 print($Aircraft.get_fdm().get_property("velocities/vc-kts"))
 ```
-Until terrain support (Phase 3) JSBSim's ground is flat at the origin's height.
+The ground is a flat plane at `ground_level` (scene y, default 0: the origin's height), or the node at `ground_path`
+(anything with `height_at(x, z)` returning the scene y of the ground, NAN where it has no data). Set
+`start_on_ground` to start at rest on the gear; `brake` is 0..1. The aircraft stops and emits `crashed(reason)` when
+a wing or another structure contact touches the ground, a wheel touches down faster than `crash_sink_rate` (4 m/s),
+or it ends up below the ground; `restart()` starts again.
 
 ### FDM only
 ```gdscript
@@ -82,12 +86,21 @@ print(fdm.get_property("position/geod-alt-ft"), " ft")
 `demo/flight.tscn` (the main scene): a J3Cub trimmed at 1500 m over flat ground near Ankara Esenboğa, with chase and
 cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, C camera, P pause, N single step,
 `[` `]` time scale, Backspace reset, F3 property panel. Command-line options for tests (after `--`): `--seconds N`
-(prints a `FLIGHT_CHECK` line and quits), `--time-scale X`, `--aileron X`, `--cockpit`, `--aircraft NAME`,
-`--screenshot PATH`.
+(prints a `FLIGHT_CHECK` line and quits), `--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff`
+(a simple autopilot takes off and climbs), `--aileron X`, `--cockpit`, `--aircraft NAME`, `--screenshot PATH`.
 ```sh
 godot --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4
 ```
-Planned: over real terrain with godot-geo, and on a DIS network with godot-dis.
+`demo/terrain_flight.tscn`: the same over real terrain from godot-geo (60×60 km around Ankara, Copernicus DEM and
+Sentinel-2), starting near the Esenboğa airport reference point; the terrain is also JSBSim's ground. Needs the
+sibling repository godot-geo next to this one with its `terrain/ankara_60km` package built (see godot-geo), then:
+```sh
+python tools/link_siblings.py
+godot --headless --path . --import
+godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff
+```
+Extra options: `--terrain PATH` (package), `--agl M` (start height above the terrain, default 300).
+Planned: on a DIS network with godot-dis.
 
 ## Documentation
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI

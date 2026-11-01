@@ -105,6 +105,20 @@ parçayı tek isme çevirir (`set_##m_name` → `set_aileron`). Sinyal: `ADD_SIG
 ise 0 tabanlı. Dönüşüm `to_vec3`/`to_mat3` içinde tek yerde yapılır; karıştırmak sessiz bir eksen kaymasıdır.
 `tests/cpp/test_jsbsim_frame.cpp` bunu JSBSim'in kendi Euler açılarıyla karşılaştırarak yakalar.
 
+## Kütüphanenin bizi çağırması: geri çağırma (callback) sınıfı (Faz 3)
+JSBSim zemini kendisi bilmez; her iniş takımı noktası için `FGGroundCallback::GetAGLevel(...)` sanal fonksiyonunu
+çağırır. `JSBSimGroundCallback` bundan türer, `override` eder ve sahnedeki zemini (`height_at`) döndürür. Nesneyi
+`new` ile yaratıp `SetGroundCallback(...)`'a veririz; sahipliği JSBSim alır ve modelle birlikte siler (`delete`'i biz
+yazmayız). Bu, DLL sınırında bellek ayırıp başka tarafta silmek demek: iki kütüphane aynı CRT'yi (`/MD`) kullandığı
+için güvenli (Faz 0 notu).
+Geri çağırma `JSBSimAircraft`'ın özel (private) üyelerine erişmeli; bunun için başlıkta `friend class
+JSBSimGroundCallback;` var: "bu sınıf benim özel üyelerimi görebilir".
+
+## `ObjectID`: düğüme güvenli işaret (Faz 3)
+Zemin düğümünü ham işaretçi (`Node *`) olarak saklamak tehlikeli: düğüm silinirse işaretçi boşluğa bakar ve çökme
+olur. Bunun yerine `ObjectID` saklanır; her kullanımda `ObjectDB::get_instance(id)` nesne hâlâ varsa onu, yoksa
+`nullptr` döndürür. GDScript'teki `is_instance_valid()` / `weakref` ile aynı fikir.
+
 ## `VARIANT_ENUM_CAST` ve `BIND_ENUM_CONSTANT` (Faz 1)
 C++ enum'unu GDScript'e açmak için: başlıkta `VARIANT_ENUM_CAST(JSBSimFDM::TrimMode);`, `_bind_methods`'ta
 `BIND_ENUM_CONSTANT(TRIM_FULL);`. GDScript'te `JSBSimFDM.TRIM_FULL` olarak görünür.

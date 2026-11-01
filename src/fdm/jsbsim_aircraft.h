@@ -1,6 +1,7 @@
 #pragma once
 
 #include <godot_cpp/classes/node3d.hpp>
+#include <godot_cpp/core/object_id.hpp>
 #include <godot_cpp/variant/node_path.hpp>
 #include <godot_cpp/variant/packed_float64_array.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -13,9 +14,11 @@
 // accumulator) and places the node on the tangent plane of a geographic origin: +X east, +Y up, -Z north, 1 unit =
 // 1 metre, the aircraft looking along -Z. The origin is the node at geo_origin_path (anything with latitude,
 // longitude and height properties, e.g. godot-dis DisGeoOrigin) or the node's own origin_* properties.
-// Until terrain support (Phase 3) JSBSim's ground is flat at the origin's height.
+// The ground JSBSim's landing gear touches is the node at ground_path (anything with height_at(x, z), e.g. godot-geo
+// GeoTerrain) or, where that has no data, a flat plane at y = ground_level.
 class JSBSimAircraft : public godot::Node3D {
 	GDCLASS(JSBSimAircraft, godot::Node3D)
+	friend class JSBSimGroundCallback;
 
 public:
 	JSBSimAircraft();
@@ -30,6 +33,13 @@ public:
 	// True after the JSBSim state became invalid (not finite or far out of range, typically after hitting the
 	// ground hard); the aircraft stops until restart(). The `failed` signal is emitted once.
 	bool is_failed() const { return failed; }
+	// True after a crash (a wing or other structure touched the ground, the gear hit it too fast, or the aircraft
+	// went below the ground); the aircraft stops until restart(). The `crashed` signal is emitted once.
+	bool is_crashed() const { return crashed; }
+	// True while any landing gear touches the ground.
+	bool is_on_ground() const;
+	// Ground height (scene y) below a scene position, as JSBSim sees it.
+	double get_ground_height(double x, double z) const;
 	// Advances the simulation by `delta` seconds of game time (scaled by time_scale) and updates the transform.
 	// Called by _physics_process unless paused; call it directly to drive the aircraft yourself. Returns the
 	// number of JSBSim steps done.
@@ -58,6 +68,17 @@ public:
 	double get_airspeed() const { return airspeed; }
 	void set_trim_on_start(bool value) { trim_on_start = value; }
 	bool get_trim_on_start() const { return trim_on_start; }
+	void set_start_on_ground(bool value) { start_on_ground = value; }
+	bool get_start_on_ground() const { return start_on_ground; }
+
+	void set_ground_path(const godot::NodePath &value) { ground_path = value; }
+	godot::NodePath get_ground_path() const { return ground_path; }
+	void set_ground_level(double value) { ground_level = value; }
+	double get_ground_level() const { return ground_level; }
+	void set_crash_detection(bool value) { crash_detection = value; }
+	bool get_crash_detection() const { return crash_detection; }
+	void set_crash_sink_rate(double value) { crash_sink_rate = value; }
+	double get_crash_sink_rate() const { return crash_sink_rate; }
 
 	void set_geo_origin_path(const godot::NodePath &value) { geo_origin_path = value; }
 	godot::NodePath get_geo_origin_path() const { return geo_origin_path; }
@@ -83,6 +104,8 @@ public:
 	double get_rudder() const { return rudder; }
 	void set_throttle(double value);
 	double get_throttle() const { return throttle; }
+	void set_brake(double value);
+	double get_brake() const { return brake; }
 
 	void _ready() override;
 	void _physics_process(double delta) override;
@@ -93,6 +116,8 @@ protected:
 private:
 	bool apply_initial_condition();
 	void apply_controls();
+	// Checks the ground contacts after a step; sets `crashed` and emits the signal.
+	void check_crash();
 	// Returns false (and stops the aircraft) if the JSBSim state is invalid.
 	bool update_transform();
 
@@ -104,6 +129,13 @@ private:
 	double heading = 0.0; // degrees, true
 	double airspeed = 70.0; // calibrated, knots
 	bool trim_on_start = true;
+	bool start_on_ground = false; // at rest on the ground at latitude / longitude (height is ignored)
+
+	godot::NodePath ground_path;
+	double ground_level = 0.0; // scene y of the flat ground
+	bool crash_detection = true;
+	double crash_sink_rate = 4.0; // m/s: faster touchdowns are crashes
+	godot::ObjectID ground_id;
 
 	godot::NodePath geo_origin_path;
 	double origin_latitude = 39.95;
@@ -121,11 +153,13 @@ private:
 	double elevator = 0.0;
 	double rudder = 0.0;
 	double throttle = 0.8;
+	double brake = 0.0; // 0..1, both main wheels
 
 	godot::Ref<JSBSimFDM> fdm;
 	gjsb::geo::LocalFrame frame;
 	bool started = false;
 	bool failed = false;
+	bool crashed = false;
 	double accumulator = 0.0;
 	godot::Vector3 linear_velocity;
 	godot::Vector3 angular_velocity;

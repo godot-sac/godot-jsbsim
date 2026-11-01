@@ -3,8 +3,9 @@ extends Node
 ## Flies a JSBSimAircraft with the keyboard or a gamepad. Uses the InputMap actions below; the ones missing from the
 ## project are added with default keys at start, so it works without setup and can be remapped in Project Settings.
 ##
-## Default keys: W/S or Up/Down pitch (S pulls), A/D or Left/Right roll, Q/E rudder, R/F throttle.
-## Gamepad: left stick pitch and roll, right stick X rudder, right/left trigger throttle up/down.
+## Default keys: W/S or Up/Down pitch (S pulls), A/D or Left/Right roll, Q/E rudder, R/F throttle, B brakes.
+## Gamepad: left stick pitch and roll, right stick X rudder, right/left trigger throttle up/down, left shoulder
+## brakes.
 
 const PITCH_UP := &"jsbsim_pitch_up"
 const PITCH_DOWN := &"jsbsim_pitch_down"
@@ -14,6 +15,7 @@ const YAW_LEFT := &"jsbsim_yaw_left"
 const YAW_RIGHT := &"jsbsim_yaw_right"
 const THROTTLE_UP := &"jsbsim_throttle_up"
 const THROTTLE_DOWN := &"jsbsim_throttle_down"
+const BRAKE := &"jsbsim_brake"
 
 ## The aircraft to fly. Defaults to the parent node.
 @export var aircraft: JSBSimAircraft
@@ -50,6 +52,7 @@ func _physics_process(delta: float) -> void:
 	var throttle_input := Input.get_action_strength(THROTTLE_UP) - Input.get_action_strength(THROTTLE_DOWN)
 	if throttle_input != 0.0:
 		aircraft.throttle = clampf(aircraft.throttle + throttle_input * throttle_rate * delta, 0.0, 1.0)
+	aircraft.brake = Input.get_action_strength(BRAKE)
 
 
 ## Resets the stick to the centre (after JSBSimAircraft.restart()).
@@ -85,6 +88,14 @@ func _add_default_actions() -> void:
 	_add(YAW_RIGHT, [KEY_E], JOY_AXIS_RIGHT_X, 1.0)
 	_add(THROTTLE_UP, [KEY_R, KEY_PAGEUP], JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	_add(THROTTLE_DOWN, [KEY_F, KEY_PAGEDOWN], JOY_AXIS_TRIGGER_LEFT, 1.0)
+	if not InputMap.has_action(BRAKE):
+		InputMap.add_action(BRAKE)
+		var key := InputEventKey.new()
+		key.physical_keycode = KEY_B
+		InputMap.action_add_event(BRAKE, key)
+		var button := InputEventJoypadButton.new()
+		button.button_index = JOY_BUTTON_LEFT_SHOULDER
+		InputMap.action_add_event(BRAKE, button)
 
 
 func _add(action: StringName, keys: Array[Key], axis: JoyAxis, direction: float) -> void:

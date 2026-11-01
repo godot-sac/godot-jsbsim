@@ -16,6 +16,14 @@ All notable changes to this project are documented here. Versions follow [semver
   origin (`geo_origin_path` or `origin_*`), orientation from JSBSim's body-to-ECEF matrix, trim on start with the
   trimmed commands moved into the trim properties, pilot commands, time scale, pause, restart, `failed` signal when
   the JSBSim state becomes invalid.
+- Ground contact through a JSBSim ground callback: flat ground (`ground_level`) or a node with `height_at(x, z)`
+  (`ground_path`, e.g. godot-geo `GeoTerrain`), with the terrain normal from the slope.
+- `start_on_ground` (ground trim), `brake`, nose / tail wheel steering with the rudder, `is_on_ground()`,
+  `get_ground_height()`.
+- Crash detection (`crashed` signal, `crash_detection`, `crash_sink_rate`): structure contact, hard touchdown or
+  below the ground; `restart()` reloads the model after a crash.
+- Terrain demo `demo/terrain_flight.tscn` (godot-geo, linked with `tools/link_siblings.py`), `--ground` and
+  `--takeoff` (a simple autopilot, `demo/autopilot.gd`) options.
 - `JSBSimInput` (GDScript): keyboard and gamepad input through InputMap actions.
 - Flight demo `demo/flight.tscn` with chase / cockpit cameras, HUD, property panel, debug keys and command-line
   options for automated runs.

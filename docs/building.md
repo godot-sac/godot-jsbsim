@@ -71,6 +71,8 @@ tools/.venv/Scripts/scons tests
 `test_jsbsim_frame.cpp` checks that JSBSim's ECEF location and body-to-ECEF matrix agree with that math and with
 JSBSim's own heading / pitch / roll.
 
+`test_ground.gd` flies takeoff and landing with the simple autopilot in `demo/autopilot.gd`.
+
 The flight demo can run unattended: `godot --headless --path . res://demo/flight.tscn -- --seconds 60` prints a
 `FLIGHT_CHECK` line and exits with 1 if the aircraft failed or touched the ground.
 

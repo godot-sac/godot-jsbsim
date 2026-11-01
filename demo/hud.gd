@@ -11,8 +11,8 @@ const PANEL_PROPERTIES := [
 	"fcs/pitch-trim-cmd-norm", "fcs/elevator-pos-rad", "propulsion/engine/propeller-rpm",
 	"propulsion/engine/thrust-lbs", "forces/fbz-aero-lbs", "simulation/sim-time-sec",
 ]
-const HELP := ("W/S pitch   A/D roll   Q/E rudder   R/F throttle   C camera   P pause   N step   [ ] time   "
-		+ "Backspace reset   F3 properties   Esc quit")
+const HELP := ("W/S pitch   A/D roll   Q/E rudder   R/F throttle   B brakes   C camera   P pause   N step   "
+		+ "[ ] time   Backspace reset   F3 properties   Esc quit")
 
 @export var aircraft: JSBSimAircraft
 
@@ -35,6 +35,18 @@ func _ready() -> void:
 	_panel.visible = false
 
 
+## Data source lines that must stay visible (terrain imagery and elevation licences), bottom right.
+func set_attribution(lines: PackedStringArray) -> void:
+	var label := _label(Vector2.ZERO, 12)
+	label.text = "\n".join(lines)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 12)
+	label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	label.offset_bottom = -34
+
+
 func toggle_properties() -> void:
 	_panel.visible = not _panel.visible
 
@@ -43,8 +55,8 @@ func _process(_delta: float) -> void:
 	if aircraft == null or not aircraft.is_started():
 		_data.text = "JSBSim model not loaded (see the output)"
 		return
-	if aircraft.is_failed():
-		_data.text = "SIMULATION STOPPED (crash)\nBackspace: reset"
+	if aircraft.is_failed() or aircraft.is_crashed():
+		_data.text = "CRASHED\nBackspace: reset"
 		return
 	var fdm := aircraft.get_fdm()
 	var altitude := fdm.get_property("position/geod-alt-ft") * FT
@@ -58,7 +70,8 @@ func _process(_delta: float) -> void:
 		"PITCH %+6.1f°  ROLL %+6.1f°" % [fdm.get_property("attitude/theta-deg"), fdm.get_property("attitude/phi-deg")],
 		"AOA   %+6.1f°" % fdm.get_property("aero/alpha-deg"),
 		"G     %+6.2f" % -fdm.get_property("accelerations/n-pilot-z-norm"),
-		"THR   %5.0f %%" % (aircraft.throttle * 100.0),
+		"THR   %5.0f %%%s" % [aircraft.throttle * 100.0, "   BRAKES" if aircraft.brake > 0.0 else ""],
+		"GEAR  %s" % ("on ground" if aircraft.is_on_ground() else "airborne"),
 		"STICK ail %+.2f  elev %+.2f  rud %+.2f" % [aircraft.aileron, aircraft.elevator, aircraft.rudder],
 		"TIME  %6.1f s" % fdm.get_sim_time(),
 	])
