@@ -204,6 +204,9 @@ bool JSBSimAircraft::apply_initial_condition() {
 		fdm->set_property("fcs/mixture-cmd-norm", 1.0);
 	}
 	aileron = elevator = rudder = brake = 0.0;
+	if (autopilot) {
+		autopilot->reset_loops();
+	}
 	crashed = false;
 	if (start_on_ground) {
 		throttle = 0.0;
@@ -222,6 +225,9 @@ bool JSBSimAircraft::apply_initial_condition() {
 		// A failed trim is reported by JSBSimFDM; the aircraft still flies, untrimmed.
 	}
 	apply_controls();
+	// The wind after the trim: JSBSim's trim does not converge with a crosswind and resets the winds. The aircraft
+	// meets the wind as a gust at the start and settles within seconds.
+	apply_atmosphere();
 	accumulator = 0.0;
 	failed = false;
 	const bool valid = update_transform();
@@ -382,6 +388,41 @@ bool JSBSimAircraft::is_on_ground() const {
 	return false;
 }
 
+void JSBSimAircraft::apply_atmosphere() {
+	if (!fdm->is_loaded()) {
+		return;
+	}
+	// JSBSim's wind vector points where the wind blows to.
+	const double to = Math::deg_to_rad(wind_direction + 180.0);
+	const double fps = wind_speed / M_PER_FT;
+	fdm->set_property("atmosphere/wind-north-fps", fps * std::cos(to));
+	fdm->set_property("atmosphere/wind-east-fps", fps * std::sin(to));
+	fdm->set_property("atmosphere/wind-down-fps", 0.0);
+	// FGWinds::tType: 0 none, 3 milspec (FGWinds.h's comment says 4, the enum says 3). Near the ground the milspec
+	// intensity follows the wind at 20 ft: at least JSBSim's reference value for the severity (light 3: 25 ft/s,
+	// moderate 4: 50 ft/s, severe 6: 75 ft/s).
+	fdm->set_property("atmosphere/turb-type", turbulence > 0 ? 3.0 : 0.0);
+	const double reference = turbulence >= 6 ? 75.0 : (turbulence >= 4 ? 50.0 : 25.0);
+	fdm->set_property("atmosphere/turbulence/milspec/windspeed_at_20ft_AGL-fps", std::max(fps, reference));
+	fdm->set_property("atmosphere/turbulence/milspec/severity", double(turbulence));
+}
+
+void JSBSimAircraft::set_wind_speed(double value) {
+	ERR_FAIL_COND_MSG(!(value >= 0.0), "wind_speed must not be negative.");
+	wind_speed = value;
+	apply_atmosphere();
+}
+
+void JSBSimAircraft::set_wind_direction(double value) {
+	wind_direction = Math::fposmod(value, 360.0);
+	apply_atmosphere();
+}
+
+void JSBSimAircraft::set_turbulence(int value) {
+	turbulence = Math::clamp(value, 0, 7);
+	apply_atmosphere();
+}
+
 void JSBSimAircraft::apply_controls() {
 	JSBSim::FGFDMExec *exec = fdm->get_exec();
 	if (!exec) {
@@ -529,6 +570,11 @@ void JSBSimAircraft::_bind_methods() {
 	BIND_PROPERTY(FLOAT, ground_level, PROPERTY_HINT_RANGE, "-1000,1000,0.01,or_less,or_greater,suffix:m");
 	BIND_PROPERTY(BOOL, crash_detection, PROPERTY_HINT_NONE, "");
 	BIND_PROPERTY(FLOAT, crash_sink_rate, PROPERTY_HINT_RANGE, "0.5,20,0.1,suffix:m/s");
+	ADD_GROUP("Atmosphere", "");
+	BIND_PROPERTY(FLOAT, wind_speed, PROPERTY_HINT_RANGE, "0,60,0.1,or_greater,suffix:m/s");
+	BIND_PROPERTY(FLOAT, wind_direction, PROPERTY_HINT_RANGE, "0,360,1,suffix:°");
+	BIND_PROPERTY(INT, turbulence, PROPERTY_HINT_ENUM,
+			"None,1,2,Light (3),Moderate (4),5,Severe (6),Extreme (7)");
 	ADD_GROUP("Simulation", "");
 	BIND_PROPERTY(FLOAT, rate, PROPERTY_HINT_RANGE, "10,1000,1,suffix:Hz");
 	BIND_PROPERTY(FLOAT, time_scale, PROPERTY_HINT_RANGE, "0,16,0.01");

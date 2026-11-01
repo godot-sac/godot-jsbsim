@@ -19,6 +19,9 @@ Done:
   local frame of a geographic origin (+X east, +Y up, −Z north, metres; the same frame as godot-dis `DisGeoOrigin`),
   trims on start, takes stick / pedal / throttle / brake commands, time scale and pause; the controls act at every
   JSBSim step, so a flight is the same at any frame rate ([docs/timing.md](docs/timing.md))
+- Wind (`wind_speed`, `wind_direction`) and MIL-F-8785C turbulence (`turbulence` 0–7) on `JSBSimAircraft`
+- 10–100 aircraft at once: about 7 µs per aircraft step, 50 aircraft at 120 Hz use 4 % of one core
+  ([docs/performance.md](docs/performance.md), `demo/many_aircraft.tscn`)
 - `JSBSimAutopilot`: heading, height, airspeed and vertical-speed holds and waypoint routes (ground track along each
   leg, crosswind corrected, turn anticipation, loops, signals) for any model, no aircraft XML changes
   ([docs/autopilot.md](docs/autopilot.md))
@@ -118,7 +121,9 @@ cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, 
 `0` speed. Command-line options for tests (after `--`): `--seconds N` (prints a `FLIGHT_CHECK` line and quits),
 `--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff` (a simple autopilot takes off and climbs),
 `--autopilot`, `--route` (`JSBSimAutopilot` flies a 4 × 2 km loop; after `--takeoff` once airborne), `--aileron X`,
-`--cockpit`, `--aircraft NAME`, `--screenshot PATH`.
+`--cockpit`, `--aircraft NAME`, `--screenshot PATH`, `--wind KT`, `--wind-from DEG`, `--turbulence N`.
+`demo/many_aircraft.tscn`: 20 aircraft (`--count N`) on one loop with their own autopilots; Tab, O overview; a `PERF`
+line with `--seconds N`.
 ```sh
 godot --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4
 ```
@@ -145,6 +150,7 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 - [docs/autopilot.md](docs/autopilot.md) — `JSBSimAutopilot`: modes, routes, measured responses, tuning
 - [docs/timing.md](docs/timing.md) — fixed simulation rate, low frame rates, ground contact on slopes
 - [docs/input.md](docs/input.md) — keyboard, gamepad and flight stick mapping, finding a device's axis numbers
+- [docs/performance.md](docs/performance.md) — many aircraft: measured cost per step, ground query cost
 - [docs/aircraft.md](docs/aircraft.md) — using other JSBSim aircraft, where models come from, their licences
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common problems
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI, packaging

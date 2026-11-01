@@ -11,6 +11,11 @@ All notable changes to this project are documented here. Versions follow [semver
 - Flight demo: autopilot keys (T, Y, `,` `.`, `-` `=`, `9` `0`), `--autopilot`, `--route`, `--route-agl`, route
   markers, autopilot line in the HUD and `autopilot` / `waypoints` in `FLIGHT_CHECK`; the terrain demo takes off and
   flies the route with `--ground --takeoff --route`.
+- `JSBSimAircraft.wind_speed`, `wind_direction` (from, degrees true) and `turbulence` (MIL-F-8785C severity 0–7,
+  JSBSim's milspec model); applied after the trim and kept by `restart()`. Demo `--wind`, `--wind-from`,
+  `--turbulence`, HUD line.
+- `demo/many_aircraft.tscn` (N aircraft with autopilots on one loop, overview camera, `PERF` line) and
+  `docs/performance.md`.
 - `JSBSimAircraft.get_ground_normal()`; a ground node may provide `normal_at(x, z)`, used for JSBSim's gear instead
   of the slope estimate. `get_last_step_count()`, `get_last_step_time_usec()`.
 - `JSBSimInput`: `profile` (`GAMEPAD`, `FLIGHT_STICK` with configurable axis and button numbers),
@@ -18,7 +23,7 @@ All notable changes to this project are documented here. Versions follow [semver
   the controls to an engaged `JSBSimAutopilot`. Flight demo: F4 joypad panel (devices, raw axes and buttons).
   `docs/input.md`.
 - Tests: autopilot responses and frame-rate independence (`test_autopilot.gd`), gear on a 5 % slope with the true
-  and a vertical normal, no state between ground queries (`test_slope.gd`), joypad mapping (`test_input.gd`);
+  and a vertical normal, no state between ground queries (`test_slope.gd`), joypad mapping (`test_input.gd`), wind and turbulence (`test_atmosphere.gd`);
   `docs/timing.md`.
 ### Fixed
 - `JSBSimInput` treated a gamepad stick at full deflection as a key and ramped it; the control now follows the

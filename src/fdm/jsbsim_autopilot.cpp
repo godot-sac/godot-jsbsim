@@ -192,7 +192,8 @@ double JSBSimAutopilot::route_track(const Vec3 &position_ecef, const Geodetic &p
 		const int reached_index = active;
 		const bool last = active + 1 >= int(route.size());
 		emit_signal("waypoint_reached", reached_index);
-		if (last && !loop_route) {
+		// A loop needs two waypoints; one is reached once.
+		if (last && (!loop_route || route.size() == 1)) {
 			// Keep flying the last leg's course.
 			active = -1;
 			follow_route = false;
@@ -201,8 +202,8 @@ double JSBSimAutopilot::route_track(const Vec3 &position_ecef, const Geodetic &p
 			emit_signal("route_finished");
 			return NAN;
 		}
-		// Signal handlers may have changed the route.
-		if (active != reached_index || route.empty()) {
+		// Signal handlers may have changed the route: then fly what they set, from here.
+		if (active != reached_index || reached_index >= int(route.size()) || last != (active + 1 >= int(route.size()))) {
 			return active >= 0 && active < int(route.size()) ? desired_track : NAN;
 		}
 		activate(last ? 0 : active + 1, route[reached_index].ecef);

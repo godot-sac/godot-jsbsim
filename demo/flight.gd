@@ -16,6 +16,8 @@ extends Node3D
 ##   --autopilot         JSBSimAutopilot holds the start heading, height and airspeed
 ##   --route             JSBSimAutopilot flies a 4 x 2 km loop ahead of the start, --route-agl above the start ground
 ##   --route-agl M       height of the route above the start ground (default 500)
+##   --wind KT           steady wind speed in knots, --wind-from DEG its direction (default 270, from the west)
+##   --turbulence N      MIL-F-8785C turbulence severity 0..7 (3 light, 4 moderate, 6 severe)
 ##   --dis               publish the aircraft on a DIS network with godot-dis (link it with tools/link_siblings.py):
 ##                       multicast 239.1.2.3, exercise 1, like the godot-dis and godot-geo demos
 ##   --port N            DIS port (default 3000); another port is a separate exercise, e.g. for tests
@@ -51,6 +53,9 @@ func _ready() -> void:
 	if _options.has("aircraft"):
 		aircraft.aircraft = _options.aircraft
 	aircraft.start_on_ground = _options.has("ground")
+	aircraft.wind_speed = float(_options.get("wind", 0.0)) * 0.514444
+	aircraft.wind_direction = float(_options.get("wind-from", 270.0))
+	aircraft.turbulence = int(_options.get("turbulence", 0))
 	_setup_world()
 	if _options.has("dis"):
 		_setup_dis()

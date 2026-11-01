@@ -57,7 +57,7 @@ with the J3Cub at rest (`tests/unit/test_slope.gd`):
 |---|---|
 | flat | 0.390 m |
 | 5 % slope, true normal | 0.402 m (+3 %, the weight shifts between the wheels) |
-| 5 % slope, vertical normal | 0.525 m (+35 %) |
+| 5 % slope, vertical normal | 0.521 m (+34 %) |
 
 Taxiing up and down the ramp with the true normal, no gear unit loses and regains contact (no weight-on-wheels
 bounce).

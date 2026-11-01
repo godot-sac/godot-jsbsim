@@ -91,6 +91,9 @@ func _process(_delta: float) -> void:
 		"STICK ail %+.2f  elev %+.2f  rud %+.2f" % [aircraft.aileron, aircraft.elevator, aircraft.rudder],
 		"TIME  %6.1f s" % fdm.get_sim_time(),
 	])
+	if aircraft.wind_speed > 0.0 or aircraft.turbulence > 0:
+		lines.append("WIND  %3.0f kt from %03.0f°   turbulence %d" % [aircraft.wind_speed / 0.514444,
+				aircraft.wind_direction, aircraft.turbulence])
 	var ap := aircraft.get_autopilot()
 	if ap and ap.enabled:
 		var modes := "HDG %03.0f" % ap.target_heading if ap.heading_hold and not ap.follow_route else "WINGS LEVEL"

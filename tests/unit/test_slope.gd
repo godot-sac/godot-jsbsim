@@ -19,7 +19,9 @@ func _ground(script: String, slope: float) -> Node:
 	return ground
 
 
-func _aircraft(heading: float) -> JSBSimAircraft:
+## trim: JSBSim's ground trim; off, the aircraft drops 1 ft onto its gear (the trim does not always converge with a
+## vertical normal on a slope, depending on the compiler).
+func _aircraft(heading: float, trim := true) -> JSBSimAircraft:
 	var a := JSBSimAircraft.new()
 	a.latitude = LAT
 	a.longitude = LON
@@ -28,6 +30,7 @@ func _aircraft(heading: float) -> JSBSimAircraft:
 	a.origin_height = 1000.0
 	a.heading = heading
 	a.start_on_ground = true
+	a.trim_on_start = trim
 	a.ground_path = NodePath("../Ground")
 	add_child_autofree(a)
 	a.paused = true
@@ -85,7 +88,7 @@ func test_normal_from_the_slope() -> void:
 func test_ground_node_normal_is_used() -> void:
 	var ground := _ground("res://tests/unit/fake_ground_normal.gd", SLOPE)
 	ground.set("vertical", true)
-	var a := _aircraft(90.0)
+	var a := _aircraft(90.0, false)
 	assert_eq(a.get_ground_normal(0.0, 0.0), Vector3.UP)
 	assert_gt(ground.get("normal_calls"), 0, "JSBSim's gear queries went through normal_at")
 
@@ -151,8 +154,8 @@ func test_vertical_normal_over_compresses() -> void:
 	ground.free()
 	ground = _ground("res://tests/unit/fake_ground_normal.gd", SLOPE)
 	ground.set("vertical", true)
-	var vertical := _rest(_aircraft(90.0))
-	var downhill := _taxi(_aircraft(270.0), 0.25, 20.0)
+	var vertical := _rest(_aircraft(90.0, false))
+	var downhill := _taxi(_aircraft(270.0, false), 0.25, 20.0)
 	gut.p("compression (m) on 5 %%: true normal %s, vertical normal %s; downhill taxi with a vertical normal: WOW changes %s" % [
 		str(true_normal), str(vertical), str(downhill.changes)])
 	var total_true: float = true_normal[0] + true_normal[1] + true_normal[2]

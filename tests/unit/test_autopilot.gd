@@ -206,3 +206,29 @@ func test_same_flight_at_any_frame_rate() -> void:
 		results.append(a.get_geodetic_position())
 	for i in range(1, results.size()):
 		assert_eq(results[i], results[0], "identical position, run %d" % i)
+
+
+func test_single_waypoint_loop_is_reached_once() -> void:
+	var a := _aircraft()
+	var ap: JSBSimAutopilot = a.get_autopilot()
+	ap.engage()
+	ap.loop_route = true
+	ap.add_waypoint_local(Vector3(0, a.position.y, -800))
+	ap.follow_route = true
+	watch_signals(ap)
+	_fly(a, 60.0)
+	assert_signal_emit_count(ap, "waypoint_reached", 1)
+	assert_signal_emitted(ap, "route_finished")
+
+
+func test_restart_keeps_flying() -> void:
+	var a := _aircraft()
+	var ap: JSBSimAutopilot = a.get_autopilot()
+	ap.engage()
+	ap.target_altitude = 1700.0
+	_fly(a, 30.0)
+	assert_true(a.restart())
+	assert_true(ap.enabled, "the autopilot stays on")
+	_fly(a, 120.0)
+	assert_false(a.is_crashed())
+	assert_almost_eq(_height(a), 1700.0, 15.0, "climbs again from the restart")

@@ -98,6 +98,15 @@ public:
 	void set_crash_sink_rate(double value) { crash_sink_rate = value; }
 	double get_crash_sink_rate() const { return crash_sink_rate; }
 
+	// Steady wind (m/s) blowing from wind_direction (degrees true, where it comes from, like a weather report), and
+	// MIL-F-8785C turbulence severity 0 (none) .. 7: 3 light, 4 moderate, 6 severe (JSBSim's milspec Dryden model).
+	void set_wind_speed(double value);
+	double get_wind_speed() const { return wind_speed; }
+	void set_wind_direction(double value);
+	double get_wind_direction() const { return wind_direction; }
+	void set_turbulence(int value);
+	int get_turbulence() const { return turbulence; }
+
 	void set_geo_origin_path(const godot::NodePath &value) { geo_origin_path = value; }
 	godot::NodePath get_geo_origin_path() const { return geo_origin_path; }
 	void set_origin_latitude(double value) { origin_latitude = value; }
@@ -134,6 +143,8 @@ protected:
 private:
 	bool apply_initial_condition();
 	void apply_controls();
+	// Writes wind and turbulence into JSBSim (when a model is loaded).
+	void apply_atmosphere();
 	gjsb::geo::Vec3 ground_normal(double x, double z) const;
 	// Checks the ground contacts after a step; sets `crashed` and emits the signal.
 	void check_crash();
@@ -158,6 +169,9 @@ private:
 	double ground_level = 0.0; // scene y of the flat ground
 	bool crash_detection = true;
 	double crash_sink_rate = 4.0; // m/s: faster touchdowns are crashes
+	double wind_speed = 0.0; // m/s
+	double wind_direction = 270.0; // degrees true, from
+	int turbulence = 0; // MIL-F-8785C severity 0..7
 	godot::ObjectID ground_id;
 	bool ground_has_normal = false; // the ground node has normal_at(x, z)
 

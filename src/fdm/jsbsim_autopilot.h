@@ -27,6 +27,8 @@ public:
 	void update(double dt);
 	// Turns the autopilot on holding the current heading, height and airspeed (all three modes on).
 	void engage();
+	// Restarts the loops from the current commands at the next update (the aircraft calls it on restart()).
+	void reset_loops() { was_enabled = false; }
 
 	// Route: points flown in order, each with an optional height (metres above the WGS84 ellipsoid) and calibrated
 	// airspeed (knots) that become the targets when the point becomes active (NAN keeps the current target).

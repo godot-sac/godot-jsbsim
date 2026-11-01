@@ -67,6 +67,7 @@ has none. `JSBSimAutopilot` works the same with every model. If your aircraft ha
 | 90° / 180° heading change | within 3° after 18 s / 32 s; bank peaks ~28° (`max_bank` 25°); height within 3 m |
 | −10 kt speed change | exact after 120 s; height within 4 m |
 | 2 km square route | worst cross-track error in the middle of a leg 21 m; 37 m with a 20 kt crosswind |
+| 4 × 2 km demo loop, 20 kt crosswind and light turbulence | all waypoints, height within 18 m (`--wind 20 --turbulence 3`) |
 | same route at 120, 60, 30, 20, 7.5 FPS | identical position after 90 s (bit for bit) |
 
 `tests/tune_autopilot.gd` prints these numbers (`godot --headless --path . -s res://tests/tune_autopilot.gd`).
