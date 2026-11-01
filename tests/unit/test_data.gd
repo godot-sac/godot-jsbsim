@@ -17,7 +17,7 @@ func test_resolve_missing_dir() -> void:
 func test_extract_copies_all_files() -> void:
 	var path := JSBSimFDM.extract_data_dir(DATA)
 	assert_string_starts_with(path, ProjectSettings.globalize_path("user://jsbsim/data-"))
-	for file: String in ["aircraft/pc7/pc7.xml", "aircraft/pc7/Systems/Landing Gear.xml", "aircraft/J3Cub/J3Cub.xml"]:
+	for file: String in ["aircraft/J3Cub/J3Cub.xml", "aircraft/J3Cub/Engines/Continental A-65-8.xml", "aircraft/J3Cub/NOTICE.md"]:
 		var source := DATA.path_join(file)
 		var copy := path.path_join(file)
 		assert_true(FileAccess.file_exists(copy), file)
@@ -31,9 +31,9 @@ func test_extracted_data_flies_the_same() -> void:
 	var results: Array[float] = []
 	for dir: String in [DATA, extracted]:
 		var fdm := JSBSimFDM.new()
-		assert_true(fdm.load_model("pc7", dir), fdm.get_last_error())
+		assert_true(fdm.load_model("J3Cub", dir), fdm.get_last_error())
 		fdm.set_initial_position(39.95, 32.69, 1500.0)
-		fdm.set_initial_airspeed(150.0)
+		fdm.set_initial_airspeed(70.0)
 		fdm.run_ic()
 		fdm.start_engines()
 		fdm.step(600)
@@ -55,12 +55,12 @@ func test_data_inside_pck_is_extracted() -> void:
 
 	assert_false(DirAccess.dir_exists_absolute(ProjectSettings.globalize_path("res://packed_jsbsim")), "not on disk")
 	var fdm := JSBSimFDM.new()
-	assert_true(fdm.load_model("pc7", "res://packed_jsbsim"), fdm.get_last_error())
+	assert_true(fdm.load_model("J3Cub", "res://packed_jsbsim"), fdm.get_last_error())
 	assert_string_starts_with(fdm.get_data_path(), ProjectSettings.globalize_path("user://jsbsim/packed_jsbsim-"))
 	for file in files:
 		assert_true(FileAccess.file_exists(fdm.get_data_path().path_join(file)), file)
 	fdm.set_initial_position(39.95, 32.69, 1500.0)
-	fdm.set_initial_airspeed(150.0)
+	fdm.set_initial_airspeed(70.0)
 	assert_true(fdm.run_ic())
 	assert_eq(fdm.step(120), 120)
 

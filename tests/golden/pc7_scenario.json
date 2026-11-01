@@ -1,7 +1,7 @@
 {
-  "description": "pc7 untrimmed (its turboprop model does not trim in JSBSim 1.3.3) at 1500 m near Ankara Esenboga heading north, fixed throttle.",
+  "description": "pc7 untrimmed (its turboprop model does not trim in JSBSim 1.3.3) at 1500 m near Ankara Esenboga heading north, fixed throttle. pc7 is not bundled; it is read from the JSBSim submodule.",
   "aircraft": "pc7",
-  "data_dir": "addons/jsbsim/data",
+  "data_dir": "thirdparty/jsbsim",
   "latitude": 39.95,
   "longitude": 32.69,
   "height_m": 1500.0,

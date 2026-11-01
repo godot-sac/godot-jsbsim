@@ -10,8 +10,9 @@ All notable changes to this project are documented here. Versions follow [semver
   `step`, `reset`; property access with checks for unknown names; property list. JSBSim exceptions become errors.
 - JSBSim log messages routed to the Godot output (`set_log_level`, `set_debug_level`).
 - Data folders inside an exported `.pck` are extracted to `user://jsbsim/` (`extract_data_dir`).
-- Bundled aircraft `pc7` and `J3Cub` with `COPYING.JSBSim`; `tools/bundle_aircraft.py` copies reviewed models and
-  checks their licence notes.
+- Bundled aircraft `J3Cub` with `COPYING.JSBSim`, `data/LICENSE.md` and a per-model `NOTICE.md` (origin from
+  JSBSim's git history; the data is LGPL-2.1, not MIT); `tools/bundle_aircraft.py` copies reviewed models, checks
+  their licence notes and writes the notices. JSBSim's `pc7` is not bundled (unclear provenance).
 - `JSBSimAircraft` node: fixed-rate stepping with a time accumulator, placement in the local frame of a geographic
   origin (`geo_origin_path` or `origin_*`), orientation from JSBSim's body-to-ECEF matrix, trim on start with the
   trimmed commands moved into the trim properties, pilot commands, time scale, pause, restart, `failed` signal when

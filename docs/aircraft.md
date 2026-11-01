@@ -1,6 +1,6 @@
 # Using other aircraft
 
-godot-jsbsim flies any JSBSim model; it only bundles two (`pc7`, `J3Cub`). A model is a folder of JSBSim XML
+godot-jsbsim flies any JSBSim model; it only bundles one (`J3Cub`). A model is a folder of JSBSim XML
 files. JSBSim looks for it in a *data folder*:
 
 ```
@@ -27,8 +27,11 @@ export filter (*Export → Resources → Filters to export non-resource files*).
 ## Where models come from
 - **JSBSim's repository** (`thirdparty/jsbsim/aircraft/`, about 60 models). The files have mixed licences: most
   fall under JSBSim's LGPL-2.1, some state GPL, many carry a "not to be sold" note. Read each model's
-  `<fileheader>` and the engine / system files it uses before you ship it. godot-jsbsim bundles only models with
-  neither (`tools/bundle_aircraft.py` keeps the reviewed list and refuses the rest).
+  `<fileheader>` and the engine / system files it uses before you ship it, and look at its git history: a clean
+  header today does not mean a clean origin (the `pc7` was synced with FlightGear's GPL data and once carried a
+  "not to be sold" note that a later regeneration dropped). godot-jsbsim bundles only models whose files and
+  history show neither (`tools/bundle_aircraft.py` keeps the reviewed list, refuses the rest and writes a
+  `NOTICE.md` with the origin of each bundled model).
 - **Aeromatic** (JSBSim's model generator, `thirdparty/jsbsim/utils/aeromatic++`) makes a first model from a few
   numbers (type, weight, wing span, engines); good enough to start, to be tuned against real data.
 - **FlightGear aircraft** often include a JSBSim model, mostly under the GPL: fine for your own use, not for a game
@@ -36,7 +39,7 @@ export filter (*Export → Resources → Filters to export non-resource files*).
 
 ## Make it fly well in Godot
 - `JSBSimAircraft.trim_on_start` trims the model for level flight at the start airspeed. Some models do not trim
-  (the bundled `pc7` does not in JSBSim 1.3.3): the aircraft then starts untrimmed; start on the ground instead
+  (JSBSim's `pc7` does not in JSBSim 1.3.3): the aircraft then starts untrimmed; start on the ground instead
   (`start_on_ground`) or tune the start speed.
 - The visual model looks along −Z with +Y up; the node's origin is JSBSim's centre of gravity, so the mesh is
   placed relative to it (JSBSim's `<location name="CG">`, in the model's structural frame).

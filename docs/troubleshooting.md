@@ -31,7 +31,7 @@ A wing or another structure touched the ground, a wheel touched down faster than
 aircraft went below the ground. Turn `crash_detection` off to let JSBSim carry on.
 
 **Trim failed**
-The model cannot hold level flight at that airspeed and height (or never trims, like `pc7` in JSBSim 1.3.3). The
+The model cannot hold level flight at that airspeed and height (or never trims, like JSBSim's `pc7` in 1.3.3). The
 aircraft still flies, untrimmed. Try another start airspeed, or start on the ground.
 
 **The aircraft floats above or sinks into the terrain**

@@ -17,11 +17,15 @@ JSBSim bundles third-party code of its own (Expat, parts of SimGear, GeographicL
 their notices are in the JSBSim source tree.
 
 ### JSBSim aircraft data
-`addons/jsbsim/data/aircraft/` — copied unmodified from JSBSim 1.3.3 by `tools/bundle_aircraft.py`; part of the
-JSBSim distribution and covered by its **LGPL-2.1** (`COPYING.JSBSim`). The files carry neither a GPL notice nor a
-"not to be sold" note.
-- `pc7` — Pilatus PC-7, created with Aeromatic 3.3.0 (2016). Not endorsed by the manufacturer.
-- `J3Cub` — Piper J-3 Cub, Erik Hofman using Aeromatic 3.2.0 (2015). Not endorsed by the manufacturer.
+`addons/jsbsim/data/` — **not covered by this project's MIT license.** Copied unmodified from JSBSim 1.3.3 by
+`tools/bundle_aircraft.py`; part of the JSBSim distribution, distributed under its **LGPL-2.1** (`COPYING.JSBSim`).
+The files name no licence of their own and JSBSim has not stated whether its repository licence covers such files
+(JSBSim discussion #1531); `addons/jsbsim/data/LICENSE.md` and a `NOTICE.md` per model record the origin from
+JSBSim's git history.
+- `J3Cub` — Piper J-3 Cub, Erik Hofman using Aeromatic 3.2.0 (2015), added to JSBSim directly (`bd676b7f`); no GPL
+  notice, no "not to be sold" note and no FlightGear sync in its history. Not endorsed by the manufacturer.
+
+Not distributed: JSBSim's `pc7` (used by the tests from the submodule only); see docs/licensing.md.
 
 ### godot-cpp 10.0.0
 https://github.com/godotengine/godot-cpp — MIT License, Copyright (c) 2017-present Godot Engine contributors.

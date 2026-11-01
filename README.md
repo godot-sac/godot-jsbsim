@@ -25,7 +25,8 @@ Done:
   rates for dead reckoning, and as destroyed after a crash; SISO-REF-010 entity types of the bundled aircraft
   (`JSBSimDisTypes`)
 - `JSBSimInput`: keyboard and gamepad input through InputMap actions
-- Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
+- Bundled aircraft: `J3Cub` (Piper J-3 Cub), unmodified JSBSim data under JSBSim's LGPL-2.1, not MIT (see
+  `addons/jsbsim/data/LICENSE.md`); other JSBSim models load from your own data folder
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Not yet: a published release with prebuilt libraries (CI builds the package; see [docs/release.md](docs/release.md)).
@@ -103,7 +104,6 @@ print(fdm.get_property("position/geod-alt-ft"), " ft")
   files*, otherwise they are not in the `.pck`.
 - `JSBSimFDM.set_log_level(JSBSimFDM.LOG_INFO)` shows more JSBSim messages; `set_debug_level(1)` turns on JSBSim's
   own console output (model summary, trim report).
-- The bundled `pc7` does not trim in JSBSim 1.3.3 (its turboprop engine model); start it with fixed controls.
 
 ## Demos
 `demo/flight.tscn` (the main scene): a J3Cub trimmed at 1500 m over flat ground near Ankara Esenboğa, with chase and

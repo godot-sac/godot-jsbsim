@@ -33,8 +33,20 @@ The LGPL lets every user run the program with a modified JSBSim. With godot-jsbs
 
 ## Aircraft data
 JSBSim's aircraft, engine and systems XML files are data with mixed licences (most fall under the repository's
-LGPL-2.1, some state GPL, many carry a "not to be sold" note). godot-jsbsim only distributes models whose files
-state neither GPL nor such a note; each one is listed in `THIRD_PARTY_NOTICES.md`. The bundled models (`pc7`,
-`J3Cub`) are copied unmodified into `addons/jsbsim/data/` by `tools/bundle_aircraft.py`, which refuses models outside
-the reviewed list and files that mention the GPL or "not to be sold"; `--check` compares the bundle with the
-submodule. Other JSBSim models can be used from your own data folder at your own responsibility.
+LGPL-2.1, some state GPL, many carry a "not to be sold" note), and the data is **not** covered by godot-jsbsim's MIT
+licence. Most files name no licence of their own; JSBSim's maintainers have not said whether the repository's
+LGPL-2.1 applies to them (discussion #1531, October 2026). godot-jsbsim therefore distributes as little as possible:
+
+- One model, `J3Cub`, copied unmodified into `addons/jsbsim/data/` by `tools/bundle_aircraft.py`. Its files and its
+  whole git history show no GPL notice, no "not to be sold" note and no data synced from FlightGear (one author,
+  added to JSBSim directly in 2015). `addons/jsbsim/data/LICENSE.md` and `aircraft/J3Cub/NOTICE.md` say this next
+  to the files.
+- Refused although its current header is clean: `pc7`. It was synced with FlightGear's (GPL) data in 2007–2009,
+  JSBSim's lead added "This model is not to be sold" in 2012, and the note disappeared when the model was
+  regenerated with Aeromatic in 2016, with no recorded reason. The tests still fly it, from the submodule.
+- `bundle_aircraft.py` refuses models outside the reviewed list and files that mention the GPL or "not to be sold";
+  `--check` compares the bundle with the submodule and the notices with the review.
+
+Other JSBSim models can be used from your own data folder at your own responsibility. If you need data that is
+free of these doubts, generate your own model from your own inputs with Aeromatic (JSBSim's `utils/aeromatic++`,
+LGPL-2.1 as a tool; its output from your data is yours).

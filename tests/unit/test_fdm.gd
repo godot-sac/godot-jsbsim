@@ -5,11 +5,14 @@ const LAT := 39.95
 const LON := 32.69
 const HEIGHT := 1500.0
 const FT := 0.3048
+## pc7 is not bundled (unclear provenance, see THIRD_PARTY_NOTICES.md); the tests read it from the JSBSim submodule.
+const JSBSIM_DIR := "res://thirdparty/jsbsim"
 
 
 func _airborne(aircraft: String, kts: float) -> JSBSimFDM:
 	var fdm := JSBSimFDM.new()
-	assert_true(fdm.load_model(aircraft), fdm.get_last_error())
+	var ok := fdm.load_model(aircraft) if aircraft == "J3Cub" else fdm.load_model(aircraft, JSBSIM_DIR)
+	assert_true(ok, fdm.get_last_error())
 	fdm.set_initial_position(LAT, LON, HEIGHT)
 	fdm.set_initial_orientation(90.0, 0.0, 0.0)
 	fdm.set_initial_airspeed(kts)
@@ -27,10 +30,10 @@ func test_class_and_version() -> void:
 func test_load_bundled_model() -> void:
 	var fdm := JSBSimFDM.new()
 	assert_false(fdm.is_loaded())
-	assert_true(fdm.load_model("pc7"), fdm.get_last_error())
+	assert_true(fdm.load_model("J3Cub"), fdm.get_last_error())
 	assert_true(fdm.is_loaded())
-	assert_eq(fdm.get_model_name(), "pc7")
-	assert_true(DirAccess.dir_exists_absolute(fdm.get_data_path().path_join("aircraft/pc7")))
+	assert_eq(fdm.get_model_name(), "J3Cub")
+	assert_true(DirAccess.dir_exists_absolute(fdm.get_data_path().path_join("aircraft/J3Cub")))
 	assert_eq(fdm.get_last_error(), "")
 
 
