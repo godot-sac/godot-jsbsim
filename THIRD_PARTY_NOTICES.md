@@ -32,6 +32,10 @@ Compiled into the extension.
 ### GUT 9.7.1 (Godot Unit Test)
 `addons/gut/` — MIT License, Copyright (c) 2018 Tom "Butch" Wesley. Full text: `addons/gut/LICENSE.md`.
 
+### godot-dis coordinate math
+`src/geo/geo_math.*`, `tests/cpp/test_geo.cpp` and `tests/golden/geo_cases.txt` are copied from godot-dis, a sibling
+project under the same MIT license.
+
 ### doctest 2.4.12
 `thirdparty/doctest/doctest.h` — MIT License, Copyright (c) 2016-2023 Viktor Kirilov.
 Full text: `thirdparty/doctest/LICENSE.txt`.

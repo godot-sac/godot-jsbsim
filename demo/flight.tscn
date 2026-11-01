@@ -1,0 +1,83 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://demo/flight.gd" id="1_flight"]
+[ext_resource type="Script" path="res://demo/aircraft_model.gd" id="2_model"]
+[ext_resource type="Script" path="res://addons/jsbsim/jsbsim_input.gd" id="3_input"]
+[ext_resource type="Script" path="res://demo/chase_camera.gd" id="4_chase"]
+[ext_resource type="Script" path="res://demo/hud.gd" id="5_hud"]
+[ext_resource type="Shader" path="res://demo/ground.gdshader" id="6_ground"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.32, 0.5, 0.78, 1)
+sky_horizon_color = Color(0.7, 0.78, 0.86, 1)
+ground_horizon_color = Color(0.7, 0.78, 0.86, 1)
+ground_bottom_color = Color(0.3, 0.36, 0.28, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.7, 0.78, 0.86, 1)
+fog_density = 0.00004
+fog_sky_affect = 0.0
+
+[sub_resource type="ShaderMaterial" id="ground_material"]
+render_priority = 0
+shader = ExtResource("6_ground")
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+material = SubResource("ground_material")
+size = Vector2(60000, 60000)
+subdivide_width = 4
+subdivide_depth = 4
+
+[node name="Flight" type="Node3D"]
+script = ExtResource("1_flight")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 0, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 400.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+
+[node name="Aircraft" type="JSBSimAircraft" parent="."]
+latitude = 40.128
+longitude = 32.995
+height = 1500.0
+heading = 30.0
+origin_latitude = 40.128
+origin_longitude = 32.995
+origin_height = 990.0
+
+[node name="Model" type="Node3D" parent="Aircraft"]
+script = ExtResource("2_model")
+
+[node name="Input" type="Node" parent="Aircraft"]
+script = ExtResource("3_input")
+
+[node name="CockpitCamera" type="Camera3D" parent="Aircraft"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.4)
+cull_mask = 1048573
+near = 0.05
+far = 60000.0
+fov = 70.0
+
+[node name="ChaseCamera" type="Camera3D" parent="." node_paths=PackedStringArray("target")]
+current = true
+far = 60000.0
+script = ExtResource("4_chase")
+target = NodePath("../Aircraft")
+
+[node name="HUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("aircraft")]
+script = ExtResource("5_hud")
+aircraft = NodePath("../Aircraft")

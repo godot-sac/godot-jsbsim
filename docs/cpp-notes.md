@@ -90,6 +90,21 @@ yaparız. Günlük seviyesini tüm iş parçacıkları okur; `std::atomic<int>` 
 bir sınıfı `extends` edip metodunu yeniden yazmaya benzer. `override`, imza tutmazsa derleyicinin hata vermesini
 sağlar.
 
+## Düğüm yazmak: `_ready`, `_physics_process`, özellikler ve sinyaller (Faz 2)
+`JSBSimAircraft`, `Node3D`'den türer ve Godot'un sanal fonksiyonlarını `override` eder: `void _ready() override;`,
+`void _physics_process(double delta) override;`. godot-cpp bunları GDScript'teki `_ready()` gibi çağırır.
+Editörde çalışmasın diye `Engine::get_singleton()->is_editor_hint()` kontrol edilir (GDScript'te `@tool` olmayan betik
+zaten editörde çalışmaz; C++ sınıfı ise her zaman çalışır).
+Denetçide görünen özellik = getter + setter + `ADD_PROPERTY(PropertyInfo(...), "set_x", "get_x")`. Hepsini tek tek
+yazmamak için `jsbsim_aircraft.cpp`'de küçük bir makro (`BIND_PROPERTY`) var; `#` makro argümanını metne, `##` iki
+parçayı tek isme çevirir (`set_##m_name` → `set_aileron`). Sinyal: `ADD_SIGNAL(MethodInfo("failed", ...))` ve
+`emit_signal("failed", reason)`.
+
+## JSBSim'in vektör ve matrisleri 1'den başlar (Faz 2)
+`FGColumnVector3` ve `FGMatrix33` Fortran/matematik geleneğiyle 1 tabanlı: `v(1)`, `m(1, 1)`. Bizim `Vec3`/`Mat3`
+ise 0 tabanlı. Dönüşüm `to_vec3`/`to_mat3` içinde tek yerde yapılır; karıştırmak sessiz bir eksen kaymasıdır.
+`tests/cpp/test_jsbsim_frame.cpp` bunu JSBSim'in kendi Euler açılarıyla karşılaştırarak yakalar.
+
 ## `VARIANT_ENUM_CAST` ve `BIND_ENUM_CONSTANT` (Faz 1)
 C++ enum'unu GDScript'e açmak için: başlıkta `VARIANT_ENUM_CAST(JSBSimFDM::TrimMode);`, `_bind_methods`'ta
 `BIND_ENUM_CONSTANT(TRIM_FULL);`. GDScript'te `JSBSimFDM.TRIM_FULL` olarak görünür.

@@ -63,6 +63,17 @@ $godot = "C:\path\to\godot.exe"   # your Godot path
 & $godot --headless --path . --import
 & $godot --headless --path . -s addons/gut/gut_cmdln.gd
 ```
+C++ unit tests (doctest, no Godot; they link the JSBSim library):
+```sh
+tools/.venv/Scripts/scons tests
+```
+`tests/cpp/test_geo.cpp` checks the coordinate math against pymap3d values (copied from godot-dis);
+`test_jsbsim_frame.cpp` checks that JSBSim's ECEF location and body-to-ECEF matrix agree with that math and with
+JSBSim's own heading / pitch / roll.
+
+The flight demo can run unattended: `godot --headless --path . res://demo/flight.tscn -- --seconds 60` prints a
+`FLIGHT_CHECK` line and exits with 1 if the aircraft failed or touched the ground.
+
 `test_oracle.gd` runs every `tests/golden/*_scenario.json` (aircraft, initial condition, trim, control inputs, sampled
 properties) with `JSBSimFDM` and with `tools/oracle_fly.py` (the official `jsbsim` Python package, same version) and
 compares the trajectories; it is "pending" if `tools/.venv` is missing. `test_data.gd` builds a `.pck` with

@@ -77,6 +77,9 @@ jobs:
           rm -f addons/jsbsim/bin/${{ matrix.platform }}/*.exp addons/jsbsim/bin/${{ matrix.platform }}/*.lib
           ls -la addons/jsbsim/bin/${{ matrix.platform }}
 
+      - name: C++ unit tests (doctest)
+        run: '"$PY" -m SCons tests'
+
       - name: Download Godot
         if: matrix.godot_zip != ''
         run: |

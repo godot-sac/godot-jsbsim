@@ -4,8 +4,10 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Work in progress (Phase 1: core FDM wrapper). Usable from GDScript; no scene node or demo yet.
+> 🚧 Work in progress (Phase 2: aircraft node and flight demo). Flat ground only; no terrain or DIS yet.
 > See [PLAN.md](PLAN.md).
+
+![J3Cub over the flat demo ground near Ankara Esenboğa, chase camera and HUD](docs/images/flight_chase.png)
 
 ## Features
 Done:
@@ -14,12 +16,15 @@ Done:
 - `JSBSimFDM`: load a model, set the initial condition (geodetic position, ellipsoid height), trim, step, read and
   write any JSBSim property; JSBSim messages go to the Godot output
 - Works in exported games: the XML data is extracted from the `.pck` to `user://` on first use
+- `JSBSimAircraft` node: steps JSBSim at a fixed rate (120 Hz) from `_physics_process`, places the aircraft in the
+  local frame of a geographic origin (+X east, +Y up, −Z north, metres; the same frame as godot-dis `DisGeoOrigin`),
+  trims on start, takes stick / pedal / throttle commands, time scale and pause; stops cleanly if the JSBSim state
+  becomes invalid (crash)
+- `JSBSimInput`: keyboard and gamepad input through InputMap actions
 - Bundled aircraft: `pc7` (Pilatus PC-7) and `J3Cub` (Piper J-3 Cub), unmodified JSBSim data (LGPL-2.1)
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Planned (see [PLAN.md](PLAN.md)):
-- `JSBSimAircraft` node: initial conditions, controls, any JSBSim property, keyboard / joystick input
-- WGS84 / ECEF / local ENU / Godot conversions in doubles, aligned with godot-dis `DisGeoOrigin`
 - Ground contact on flat ground or on any terrain with `height_at(x, z)` (e.g. godot-geo `GeoTerrain`)
 - Publishing the aircraft on a DIS network with godot-dis
 - Prebuilt libraries for Windows, Linux and macOS
@@ -34,6 +39,22 @@ No release yet. Build from source ([docs/building.md](docs/building.md)), then c
 project.
 
 ## Usage
+### Aircraft node
+Add a `JSBSimAircraft` to the scene, set the aircraft (default `J3Cub`), the initial position (latitude, longitude,
+height above the WGS84 ellipsoid in metres), heading and calibrated airspeed, and the geographic origin of the scene
+(`geo_origin_path` to a node with `latitude`, `longitude` and `height` properties such as godot-dis `DisGeoOrigin`, or
+the `origin_*` properties). Put the visual model under it, looking along −Z. Add a `JSBSimInput` child
+(`addons/jsbsim/jsbsim_input.gd`) to fly it with the keyboard or a gamepad, or set the commands from a script:
+```gdscript
+$Aircraft.aileron = 0.2      # -1..1, + rolls right
+$Aircraft.elevator = -0.1    # -1..1, + is stick forward (nose down)
+$Aircraft.rudder = 0.0       # -1..1, + is the right pedal
+$Aircraft.throttle = 0.8     # 0..1
+print($Aircraft.get_fdm().get_property("velocities/vc-kts"))
+```
+Until terrain support (Phase 3) JSBSim's ground is flat at the origin's height.
+
+### FDM only
 ```gdscript
 var fdm := JSBSimFDM.new()
 if not fdm.load_model("J3Cub"):                  # from res://addons/jsbsim/data
@@ -58,7 +79,15 @@ print(fdm.get_property("position/geod-alt-ft"), " ft")
 - The bundled `pc7` does not trim in JSBSim 1.3.3 (its turboprop engine model); start it with fixed controls.
 
 ## Demos
-Planned: an aircraft flying with keyboard / joystick input, then over real terrain with godot-geo.
+`demo/flight.tscn` (the main scene): a J3Cub trimmed at 1500 m over flat ground near Ankara Esenboğa, with chase and
+cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, C camera, P pause, N single step,
+`[` `]` time scale, Backspace reset, F3 property panel. Command-line options for tests (after `--`): `--seconds N`
+(prints a `FLIGHT_CHECK` line and quits), `--time-scale X`, `--aileron X`, `--cockpit`, `--aircraft NAME`,
+`--screenshot PATH`.
+```sh
+godot --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4
+```
+Planned: over real terrain with godot-geo, and on a DIS network with godot-dis.
 
 ## Documentation
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI
@@ -71,6 +100,7 @@ git clone --recursive <repository url> && cd godot-jsbsim
 python -m venv tools/.venv && tools/.venv/Scripts/python -m pip install -r tools/requirements.txt
 tools/.venv/Scripts/python tools/build_jsbsim.py
 tools/.venv/Scripts/scons -j8 target=template_debug
+tools/.venv/Scripts/scons tests      # C++ unit tests (doctest)
 godot --headless --path . --import && godot --headless --path . -s addons/gut/gut_cmdln.gd
 ```
 (`tools/.venv/bin/...` on Linux and macOS.)

@@ -4,6 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "fdm/jsbsim_aircraft.h"
 #include "fdm/jsbsim_fdm.h"
 
 using namespace godot;
@@ -13,6 +14,7 @@ void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
 		return;
 	}
 	GDREGISTER_CLASS(JSBSimFDM);
+	GDREGISTER_CLASS(JSBSimAircraft);
 }
 
 void uninitialize_godot_jsbsim(ModuleInitializationLevel p_level) {

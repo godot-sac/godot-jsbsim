@@ -93,6 +93,9 @@ public:
 	// when unchanged). load_model() does this automatically in exported games; call it to extract ahead of time.
 	static godot::String extract_data_dir(const godot::String &res_dir);
 
+	// C++ only (JSBSimAircraft): the wrapped executive, null before a successful load_model().
+	JSBSim::FGFDMExec *get_exec() const { return fdm.get(); }
+
 protected:
 	static void _bind_methods();
 
