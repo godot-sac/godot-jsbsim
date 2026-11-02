@@ -3,7 +3,18 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- The demos moved from Ankara Esenboğa to Istanbul: `demo/terrain_flight.tscn` uses godot-geo's 60 km Üsküdar
+  package (`terrain/uskudar`, OpenStreetMap buildings and roads) and starts on Sabiha Gökçen's (LTFJ) north runway
+  facing runway 06 (064° true); `--route` there flies a 66 km loop over the Marmara coast, the Maiden's Tower, the
+  15 July Martyrs Bridge and Büyük Çamlıca and back (lowest clearance above the terrain printed at the start).
+  `demo/flight.tscn`, `demo/many_aircraft.tscn` and `docs/getting-started.md` use the same airport over flat ground.
+  The README animation, the terrain screenshot and the social preview show the Bosphorus.
+- Demo HUD: the data source lines wrap across the window (they were cut off left of the window in small windows).
 ### Added
+- Terrain demo `--start-at N` (start in the air at route point N); buildings and trees are left out in headless runs.
+- `tests/unit/test_runway.gd`: takeoff and landing on LTFJ's runway 06 on the real terrain (skipped without
+  godot-geo and its `terrain/uskudar` package).
 - `docs/getting-started.md`: from an empty project and the release zip to a flying aircraft and an autopilot
   route, with screenshots (tried step by step in a clean Linux directory); `docs/compatibility.md`: what was tested
   with which Godot version and platform.

@@ -8,8 +8,8 @@ JSBSim 1.3.3 (shared library, LGPL-2.1), godot-cpp 10 built against the Godot 4.
 
 | Godot | Platform | Build | Status | What was run |
 |---|---|---|---|---|
-| 4.7.2 | Windows 11 x86_64 | MSVC 2022 (`/MD`) | ✅ tested | GUT 78/78, doctest 3631 assertions, flight / terrain / many-aircraft demos, release zip in an empty project (`check_package.py`), [getting-started](getting-started.md) |
-| 4.7.2 | Linux x86_64: Ubuntu 24.04 (WSL 2), glibc 2.39 | GCC 13 | ✅ tested | GUT 72 + 1 pending (no godot-dis / godot-geo links), doctest, flight demo `FLIGHT_CHECK`, the same release zip in an empty project, getting-started followed step by step in a clean directory |
+| 4.7.2 | Windows 11 x86_64 | MSVC 2022 (`/MD`) | ✅ tested | GUT 81/81 (with godot-geo and godot-dis linked), doctest 3631 assertions, flight / terrain / many-aircraft demos, release zip in an empty project (`check_package.py`), [getting-started](getting-started.md) |
+| 4.7.2 | Linux x86_64: Ubuntu 24.04 (WSL 2), glibc 2.39 | GCC 13 | ✅ tested | GUT 72 + 2 pending without sibling links, 75 + 1 pending with godot-geo (runway tests on the Istanbul terrain), doctest, flight demo `FLIGHT_CHECK`, the same release zip in an empty project, getting-started followed step by step in a clean directory |
 | 4.7.2 | Linux x86_64: Ubuntu 22.04 (CI) | GCC 11 | ⏳ not run yet | CI job written (build, doctest, GUT, package check); runs after the first push |
 | 4.7.2 | macOS universal (arm64 + x86_64) | Apple Clang (CI) | ⏳ not run yet | CI job written; never built or run |
 | 4.3 – 4.6 | any | — | ❔ declared | not tried |

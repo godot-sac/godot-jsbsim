@@ -21,6 +21,7 @@ loads), JSBSim 1.3.3 release build; 120 simulated seconds at 4× speed.
 | 50 | flat | no (and no models) | 6.9 | 4.1 % | 6.5 | 3.9 % |
 | 50 | GDScript node (`height_at`) | yes | 8.7 | 5.2 % | 8.0 | 4.8 % |
 | 50 | godot-geo terrain (60 km Ankara) | yes | 19.7 | 11.8 % | — | — |
+| 50 | godot-geo terrain (60 km Üsküdar, 2026-11-02) | yes | 19.0 | 11.4 % | — | — |
 
 Linux ran in WSL 2 on the same machine; its numbers scatter more (scheduling inside the VM, one 26 ms frame at 50
 aircraft) but agree within a few µs.

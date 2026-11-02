@@ -23,6 +23,7 @@ var _data: Label
 var _panel: Label
 var _help: Label
 var _joypads: Label
+var _attribution: Label
 
 
 func _ready() -> void:
@@ -46,21 +47,29 @@ func _ready() -> void:
 
 ## Data source lines that must stay visible (terrain imagery and elevation licences), bottom right.
 func set_attribution(lines: PackedStringArray) -> void:
-	var label := _label(Vector2.ZERO, 12)
-	label.text = "\n".join(lines)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 12)
-	label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	label.offset_bottom = -34
+	_attribution = _label(Vector2.ZERO, 12)
+	_attribution.text = "\n".join(lines)
+	_attribution.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_attribution.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	# Across the window above the key help, wrapped, so long source lines stay readable in a small window.
+	_attribution.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_attribution.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, 12)
+	_attribution.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_place_attribution()
 
 
 func toggle_text() -> void:
 	_data.visible = not _data.visible
 	_help.visible = _data.visible
+	_place_attribution()
 	_panel.visible = false
 	_joypads.visible = false
+
+
+## Above the key help, or down to the window edge while it is hidden.
+func _place_attribution() -> void:
+	if _attribution:
+		_attribution.offset_bottom = -54 if _help.visible else -12
 
 
 func toggle_properties() -> void:

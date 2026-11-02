@@ -1,6 +1,6 @@
 extends Node3D
-## Flight demo: a JSBSim aircraft over flat ground near Ankara Esenboğa, keyboard / gamepad input, chase and cockpit
-## cameras, HUD and debug keys. demo/terrain_flight.gd extends it with real terrain.
+## Flight demo: a JSBSim aircraft over flat ground at Istanbul Sabiha Gökçen (LTFJ), keyboard / gamepad input, chase
+## and cockpit cameras, HUD and debug keys. demo/terrain_flight.gd extends it with real terrain.
 ##
 ## Command line (after `--`):
 ##   --aircraft NAME     model from addons/jsbsim/data (default J3Cub)
@@ -224,7 +224,7 @@ func _engage_autopilot(follow_route: bool) -> void:
 		pilot.process_mode = Node.PROCESS_MODE_DISABLED
 	autopilot.engage()
 	if follow_route and autopilot.get_waypoint_count() > 0:
-		autopilot.target_altitude = autopilot.get_waypoint(0).height
+		autopilot.target_altitude = autopilot.get_waypoint(maxi(autopilot.get_active_waypoint(), 0)).height
 		autopilot.target_speed = maxf(autopilot.target_speed, aircraft.airspeed)  # not the climb speed
 		autopilot.follow_route = true
 	print("autopilot on: hdg %.0f, alt %.0f m, %.0f kt, route %s" % [autopilot.target_heading,

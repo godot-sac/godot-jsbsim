@@ -6,7 +6,7 @@ A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, re
 
 > 🚧 Pre-release: features for v0.1.0 are done, no release yet. See [PLAN.md](PLAN.md).
 
-![The J3Cub flying its autopilot route over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), twice the real speed](https://github.com/OWNER/godot-jsbsim/releases/latest/download/godot-jsbsim-flight.webp)
+![The J3Cub flying its autopilot route over the Bosphorus in Istanbul on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings), twice the real speed](https://github.com/OWNER/godot-jsbsim/releases/latest/download/godot-jsbsim-flight.webp)
 
 ## Features
 Done:
@@ -118,8 +118,8 @@ print(fdm.get_property("position/geod-alt-ft"), " ft")
   own console output (model summary, trim report).
 
 ## Demos
-`demo/flight.tscn` (the main scene): a J3Cub trimmed at 1500 m over flat ground near Ankara Esenboğa, with chase and
-cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, C camera, P pause, N single step,
+`demo/flight.tscn` (the main scene): a J3Cub trimmed 500 m above flat ground at Istanbul Sabiha Gökçen, with chase
+and cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, C camera, P pause, N single step,
 `[` `]` time scale, Backspace reset, F3 property panel; T autopilot, Y route, `,` `.` heading, `-` `=` height, `9`
 `0` speed. Command-line options for tests (after `--`): `--seconds N` (prints a `FLIGHT_CHECK` line and quits),
 `--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff` (a simple autopilot takes off and climbs),
@@ -131,17 +131,30 @@ line with `--seconds N`.
 ```sh
 godot --path . res://demo/flight.tscn -- --seconds 60 --time-scale 4
 ```
-`demo/terrain_flight.tscn`: the same over real terrain from godot-geo (60×60 km around Ankara, Copernicus DEM and
-Sentinel-2), starting near the Esenboğa airport reference point; the terrain is also JSBSim's ground. Needs the
-sibling repository godot-geo next to this one with its `terrain/ankara_60km` package built (see godot-geo), then:
+`demo/terrain_flight.tscn`: the same over real terrain from godot-geo (60×60 km of Istanbul around Üsküdar:
+Copernicus DEM, Sentinel-2, OpenStreetMap buildings and roads), starting on Sabiha Gökçen's (LTFJ) north runway,
+facing runway 06 (064° true); the terrain is also JSBSim's ground. `--route` flies a 66 km loop from the airport over
+the Marmara coast to the Maiden's Tower, the 15 July Martyrs Bridge and Büyük Çamlıca and back, 800 m above the
+ellipsoid. Needs the sibling repository godot-geo next to this one with its 60 km `terrain/uskudar` package (built
+with godot-geo's tools, or its release asset `godot-geo-terrain-uskudar-60km.zip` extracted into the godot-geo
+folder; the 10 km package has no airport), then:
 ```sh
 python tools/link_siblings.py
 godot --headless --path . --import
-godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff
+godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff --route
 ```
-Extra options: `--terrain PATH` (package), `--agl M` (start height above the terrain, default 300).
+Extra options: `--terrain PATH` (package), `--agl M` (start height above the terrain, default 300), `--start-at N`
+(start in the air at route point N, e.g. 1 for the Bosphorus legs).
 
-![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
+![J3Cub over the Bosphorus on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings), chase camera and HUD](docs/images/terrain_flight.jpg)
+
+Terrain data in this demo and in the images and animation (the demo shows the package's lines on screen): produced
+using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under
+COPERNICUS by the European Union and ESA; all rights reserved. Contains modified Copernicus Sentinel data 2025.
+© OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0, https://www.openstreetmap.org/copyright).
+© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover
+consortium (CC BY 4.0). Canopy height: ETH Global Canopy Height 2020, Lang et al. (2023) (CC BY 4.0). Building
+heights: GHS-BUILT-H R2023A, European Commission, Joint Research Centre (CC BY 4.0).
 
 Both demos publish the aircraft on DIS with `--dis` (godot-dis linked by `tools/link_siblings.py`): multicast
 239.1.2.3, exercise 1, like the godot-dis 2D demo and the godot-geo 3D demo, which show it with the other units.

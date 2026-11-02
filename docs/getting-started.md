@@ -56,11 +56,11 @@ godot --headless --path my_flight --import
 
 ```gdscript
 extends Node3D
-## A J3Cub over flat ground near Ankara, flown with the keyboard (godot-jsbsim getting started).
+## A J3Cub over flat ground at Istanbul Sabiha Gökçen, flown with the keyboard (godot-jsbsim getting started).
 
-const LATITUDE := 40.128   # start and scene origin, degrees
-const LONGITUDE := 32.995
-const GROUND := 990.0      # ground height above the WGS84 ellipsoid, metres
+const LATITUDE := 40.8932  # start and scene origin, degrees
+const LONGITUDE := 29.2948
+const GROUND := 126.0      # ground height above the WGS84 ellipsoid, metres
 
 var aircraft: JSBSimAircraft
 var camera: Camera3D
@@ -201,10 +201,10 @@ From a terminal, run 60 seconds of simulation as fast as the computer can (3600 
 godot --headless --path my_flight res://main.tscn --fixed-fps 60 --quit-after 3600
 ```
 ```
-t   0 s   speed  70 kt   height  500 m   heading   0°   throttle  77 %
-t  10 s   speed  70 kt   height  500 m   heading   0°   throttle  77 %
+t   0 s   speed  70 kt   height  500 m   heading   0°   throttle  71 %
+t  10 s   speed  70 kt   height  500 m   heading   0°   throttle  71 %
 ...
-t  50 s   speed  70 kt   height  500 m   heading   0°   throttle  77 %
+t  50 s   speed  70 kt   height  500 m   heading   0°   throttle  71 %
 ```
 
 ## 5. Let the autopilot fly a route (3 min)
@@ -231,10 +231,10 @@ The headless run (now 300 s: 18000 frames) prints the waypoints as they are reac
 godot --headless --path my_flight res://main.tscn --fixed-fps 60 --quit-after 18000
 ```
 ```
-t  60 s   speed  70 kt   height  500 m   heading   0°   throttle  77 %   autopilot: to waypoint 0
+t  70 s   speed  70 kt   height  499 m   heading   0°   throttle  71 %   autopilot: to waypoint 0
 reached waypoint 0
-t  70 s   speed  71 kt   height  497 m   heading  19°   throttle  73 %   autopilot: to waypoint 1
-t  80 s   speed  70 kt   height  501 m   heading  73°   throttle  85 %   autopilot: to waypoint 1
+t  80 s   speed  69 kt   height  500 m   heading  65°   throttle  79 %   autopilot: to waypoint 1
+t  90 s   speed  71 kt   height  501 m   heading  84°   throttle  68 %   autopilot: to waypoint 1
 ...
 reached waypoint 1
 ```

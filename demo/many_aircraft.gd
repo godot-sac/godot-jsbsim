@@ -18,7 +18,7 @@ const LOOP := [Vector2(0, 0), Vector2(0, -6000), Vector2(3000, -6000), Vector2(3
 const ROUTE_AGL := 500.0
 const TERRAIN_AGL := 700.0
 const GEO_TERRAIN := "res://addons/geo/geo_terrain.gd"
-const TERRAIN_PACKAGES := ["res://terrain/ankara_60km", "res://terrain/ankara"]
+const TERRAIN_PACKAGES := ["res://terrain/uskudar"]
 const MARKER_LAYER := 8  # visual layer 4: the overview markers, left out of the chase camera
 const WGS84_A := 6378137.0
 const WGS84_E2 := 0.00669437999014
@@ -28,7 +28,7 @@ const WGS84_E2 := 0.00669437999014
 @onready var label: Label = $HUD/Label
 
 var aircraft: Array[JSBSimAircraft] = []
-var origin := Vector3(40.128, 32.995, 990.0)  # latitude, longitude, ellipsoid height of the scene origin
+var origin := Vector3(40.893231, 29.294808, 126.0)  # latitude, longitude, ellipsoid height of the scene origin
 var ground_y := 0.0  # scene y of the ground under the loop start
 var _loop_offset := Vector3.ZERO  # scene position of the loop's first corner
 var _options := {}
@@ -94,12 +94,13 @@ func _setup_terrain() -> Node:
 	terrain.set_script(load(GEO_TERRAIN))
 	terrain.name = "Terrain"
 	terrain.set("collision_enabled", false)
+	terrain.set("auto_layers", DisplayServer.get_name() != "headless")  # buildings and trees: seen only
 	add_child(terrain)
 	terrain.set("package_path", package)
 	var info: Object = terrain.get("package")
 	origin = Vector3(info.get("latitude"), info.get("longitude"), info.get("origin_height"))
-	# The loop starts near Esenboğa, like the terrain demo.
-	var start := _to_local_flat(40.1283, 32.9950)
+	# The loop starts at Sabiha Gökçen, like the terrain demo.
+	var start := _to_local_flat(40.893231, 29.294808)
 	_loop_offset = start
 	ground_y = terrain.call("height_at", start.x, start.z)
 	return terrain

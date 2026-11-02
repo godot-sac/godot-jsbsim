@@ -52,13 +52,13 @@ directional_shadow_max_distance = 400.0
 mesh = SubResource("ground_mesh")
 
 [node name="Aircraft" type="JSBSimAircraft" parent="."]
-latitude = 40.128
-longitude = 32.995
-height = 1500.0
-heading = 30.0
-origin_latitude = 40.128
-origin_longitude = 32.995
-origin_height = 990.0
+latitude = 40.893231
+longitude = 29.294808
+height = 626.0
+heading = 64.0
+origin_latitude = 40.893231
+origin_longitude = 29.294808
+origin_height = 126.0
 
 [node name="Model" type="Node3D" parent="Aircraft"]
 script = ExtResource("2_model")

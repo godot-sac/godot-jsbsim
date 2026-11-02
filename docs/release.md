@@ -29,5 +29,5 @@ are not in git, so that archive alone does not work. Options:
 - the newer Godot Asset Store, which takes an uploaded zip (the release zip as it is).
 
 Entry text: name "godot-jsbsim", category *Scripts* (or *Misc*), licence MIT (JSBSim LGPL-2.1, noted in the
-description), Godot 4.3+, the README's first paragraph as the description, `docs/images/terrain_flight.png` as the
+description), Godot 4.3+, the README's first paragraph as the description, `docs/images/terrain_flight.jpg` as the
 preview, `docs/images/icon.png` as the icon.

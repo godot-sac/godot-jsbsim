@@ -17,8 +17,8 @@ autopilot.target_speed = 65.0       # knots, calibrated
 ```
 A route:
 ```gdscript
-autopilot.add_waypoint(40.05, 32.80)                # latitude, longitude: keeps the height and speed targets
-autopilot.add_waypoint(40.10, 32.85, 1800.0, 75.0)  # with a height (m, ellipsoid) and an airspeed (kt)
+autopilot.add_waypoint(40.95, 29.20)                # latitude, longitude: keeps the height and speed targets
+autopilot.add_waypoint(41.00, 29.10, 800.0, 75.0)   # with a height (m, ellipsoid) and an airspeed (kt)
 autopilot.add_waypoint_local(Vector3(2000, 600, -3000))  # a scene position (its y is the height)
 autopilot.loop_route = true
 autopilot.follow_route = true

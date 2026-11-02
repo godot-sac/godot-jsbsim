@@ -1,9 +1,9 @@
 """Records the README animation: the terrain demo flying its autopilot route (Godot's Movie Maker, PNG frames), then
-writes a 16 s clip of the turn over Esenboğa as an animated WebP (for the README) and a GIF (for places that only
+writes a 16 s clip over the Bosphorus in Istanbul as an animated WebP (for the README) and a GIF (for places that only
 take GIFs). Both are too large for git; they are attached to the GitHub release (docs/release.md).
 
-Needs a window (not --headless), the terrain demo set up (python tools/link_siblings.py, godot-geo's ankara_60km
-package) and Pillow (pip install pillow). Takes about 10 minutes, mostly PNG encoding.
+Needs a window (not --headless), the terrain demo set up (python tools/link_siblings.py, godot-geo's 60 km
+uskudar package) and Pillow (pip install pillow). Takes about 10 minutes, mostly PNG encoding.
 
 Usage (from the repo root):
     python tools/make_media.py --godot <path to the Godot executable> [--out build/media] [--frames DIR]
@@ -19,8 +19,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 FPS = 25
 TIME_SCALE = 2           # the clip plays at twice the real speed
-SIM_SECONDS = 156
-CLIP_START = 1520        # first frame of the clip (the turn after waypoint 1, airport on the right)
+SIM_SECONDS = 200        # from off Moda (route point 1) past the Maiden's Tower towards the 15 July Martyrs Bridge
+CLIP_START = 1520        # first frame of the clip
 CLIP_FRAMES = 400        # 16 s of video
 WIDTH = 640
 
@@ -31,7 +31,7 @@ def record(godot: str, frames: Path) -> None:
         old.unlink()
     command = [godot, "--path", str(ROOT), "--write-movie", str(frames / "f.png"), "--fixed-fps", str(FPS),
                "--resolution", "1280x720", "res://demo/terrain_flight.tscn", "--",
-               "--route", "--no-hud", "--time-scale", str(TIME_SCALE), "--seconds", str(SIM_SECONDS)]
+               "--route", "--start-at", "1", "--no-hud", "--time-scale", str(TIME_SCALE), "--seconds", str(SIM_SECONDS)]
     print(" ".join(command))
     subprocess.run(command, check=True)
 
