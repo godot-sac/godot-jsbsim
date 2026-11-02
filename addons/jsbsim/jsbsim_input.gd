@@ -1,3 +1,4 @@
+@icon("res://addons/jsbsim/icons/jsbsim_input.svg")
 class_name JSBSimInput
 extends Node
 ## Flies a JSBSimAircraft with the keyboard, a gamepad or a flight stick. Uses the InputMap actions below; the ones

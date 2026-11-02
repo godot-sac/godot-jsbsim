@@ -2,8 +2,8 @@
 
 Checks that every requested platform has the extension (debug and release) and the JSBSim library listed in
 jsbsim.gdextension, checks the bundled aircraft (tools/bundle_aircraft.py --check), leaves out linker files
-(.lib, .exp, .pdb), and adds LICENSE, THIRD_PARTY_NOTICES.md and JSBSIM_SOURCE.txt (the JSBSim version and
-where its source is, as the LGPL asks).
+(.lib, .exp, .pdb) and editor import files, and adds LICENSE, THIRD_PARTY_NOTICES.md and JSBSIM_SOURCE.txt (the
+JSBSim version and where its source is, as the LGPL asks).
 
 Usage (from the repo root, any Python 3):
     python tools/package_addon.py [--version 0.1.0] [--platforms windows,linux,macos] [--out build/package]
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ADDON = ROOT / "addons" / "jsbsim"
 PLATFORMS = ["windows", "linux", "macos"]
-SKIPPED_SUFFIXES = {".lib", ".exp", ".pdb", ".ilk"}
+SKIPPED_SUFFIXES = {".lib", ".exp", ".pdb", ".ilk", ".import"}
 JSBSIM_URL = "https://github.com/JSBSim-Team/jsbsim"
 
 
@@ -37,8 +37,18 @@ def required_files(platform: str) -> list[str]:
     return sorted(set(paths))
 
 
+def jsbsim_tag() -> str:
+    """The JSBSim release tag; CI's shallow submodule checkout has no tags, so fall back to its CMake version."""
+    tag = git("-C", "thirdparty/jsbsim", "describe", "--tags", "--exact-match")
+    if tag != "unknown":
+        return tag
+    cmake = (ROOT / "thirdparty" / "jsbsim" / "CMakeLists.txt").read_text(encoding="utf-8")
+    parts = [re.search(r'set\(PROJECT_VERSION_%s "(\d+)"\)' % p, cmake) for p in ("MAJOR", "MINOR", "PATCH")]
+    return "v" + ".".join(m.group(1) for m in parts) if all(parts) else "unknown"
+
+
 def source_note(version: str) -> str:
-    tag = git("-C", "thirdparty/jsbsim", "describe", "--tags")
+    tag = jsbsim_tag()
     commit = git("rev-parse", "HEAD:thirdparty/jsbsim")
     return f"""JSBSim in this addon
 ====================

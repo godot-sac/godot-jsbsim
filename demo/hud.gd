@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Flight data (top left), key help (bottom left), an optional JSBSim property panel (F3, right) and a joypad panel
-## (F4, right: connected devices with their raw axes and buttons, to map a flight stick).
+## (F4, right: connected devices with their raw axes and buttons, to map a flight stick). H hides the text (for
+## recordings); the data source lines stay.
 
 const FT := 0.3048
 const PANEL_PROPERTIES := [
@@ -53,6 +54,13 @@ func set_attribution(lines: PackedStringArray) -> void:
 	label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	label.offset_bottom = -34
+
+
+func toggle_text() -> void:
+	_data.visible = not _data.visible
+	_help.visible = _data.visible
+	_panel.visible = false
+	_joypads.visible = false
 
 
 func toggle_properties() -> void:

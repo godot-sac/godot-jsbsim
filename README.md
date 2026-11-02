@@ -6,7 +6,7 @@ A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, re
 
 > 🚧 Pre-release: features for v0.1.0 are done, no release yet. See [PLAN.md](PLAN.md).
 
-![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
+![The J3Cub flying its autopilot route over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), twice the real speed](https://github.com/OWNER/godot-jsbsim/releases/latest/download/godot-jsbsim-flight.webp)
 
 ## Features
 Done:
@@ -41,11 +41,14 @@ Done:
 Not yet: a published release with prebuilt libraries (CI builds the package; see [docs/release.md](docs/release.md)).
 
 ## Requirements
-- Godot 4.3 or newer (developed with 4.7.2)
+- Godot 4.3 or newer (developed and tested with 4.7.2; see [docs/compatibility.md](docs/compatibility.md))
 - Windows x86_64 (with the Microsoft Visual C++ Redistributable 2015–2022), Linux x86_64; macOS through CI only
 - To build from source: see [docs/building.md](docs/building.md)
 
 ## Installation
+Step by step, from an empty project to a flying aircraft and an autopilot route:
+[docs/getting-started.md](docs/getting-started.md).
+
 - **Release zip** (once published, or the `godot-jsbsim-*` artifact of a CI run): extract it into your project
   root; it contains `addons/jsbsim/` with the libraries for Windows, Linux and macOS. Open the project once in the
   editor (or run `godot --headless --import`) so the classes are registered.
@@ -121,7 +124,8 @@ cockpit cameras and a HUD. Keys: W/S pitch, A/D roll, Q/E rudder, R/F throttle, 
 `0` speed. Command-line options for tests (after `--`): `--seconds N` (prints a `FLIGHT_CHECK` line and quits),
 `--time-scale X`, `--ground` (start at rest; B brakes), `--takeoff` (a simple autopilot takes off and climbs),
 `--autopilot`, `--route` (`JSBSimAutopilot` flies a 4 × 2 km loop; after `--takeoff` once airborne), `--aileron X`,
-`--cockpit`, `--aircraft NAME`, `--screenshot PATH`, `--wind KT`, `--wind-from DEG`, `--turbulence N`.
+`--cockpit`, `--aircraft NAME`, `--screenshot PATH`, `--wind KT`, `--wind-from DEG`, `--turbulence N`, `--no-hud`
+(H hides the HUD text for recordings; the data source lines stay).
 `demo/many_aircraft.tscn`: 20 aircraft (`--count N`) on one loop with their own autopilots; Tab, O overview; a `PERF`
 line with `--seconds N`.
 ```sh
@@ -137,6 +141,8 @@ godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff
 ```
 Extra options: `--terrain PATH` (package), `--agl M` (start height above the terrain, default 300).
 
+![J3Cub over Ankara Esenboğa on godot-geo terrain (Copernicus DEM, Sentinel-2), chase camera and HUD](docs/images/terrain_flight.png)
+
 Both demos publish the aircraft on DIS with `--dis` (godot-dis linked by `tools/link_siblings.py`): multicast
 239.1.2.3, exercise 1, like the godot-dis 2D demo and the godot-geo 3D demo, which show it with the other units.
 `--port N` makes a separate exercise; `--marking TEXT` names it.
@@ -147,6 +153,7 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 ![The J3Cub (CUB01, civilian air symbol) on the godot-dis tactical map with the demo's own units](docs/images/dis_map.png)
 
 ## Documentation
+- [docs/getting-started.md](docs/getting-started.md) — from an empty project to a flying aircraft in ~15 minutes
 - [docs/autopilot.md](docs/autopilot.md) — `JSBSimAutopilot`: modes, routes, measured responses, tuning
 - [docs/timing.md](docs/timing.md) — fixed simulation rate, low frame rates, ground contact on slopes
 - [docs/input.md](docs/input.md) — keyboard, gamepad and flight stick mapping, finding a device's axis numbers
@@ -154,6 +161,7 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 - [docs/aircraft.md](docs/aircraft.md) — using other JSBSim aircraft, where models come from, their licences
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common problems
 - [docs/building.md](docs/building.md) — building JSBSim and the extension, tests, CI, packaging
+- [docs/compatibility.md](docs/compatibility.md) — tested Godot versions and platforms
 - [docs/release.md](docs/release.md) — making a release, Asset Library
 - [docs/licensing.md](docs/licensing.md) — LGPL compliance, replacing the JSBSim library, aircraft data
 - [docs/cpp-notes.md](docs/cpp-notes.md) — C++ / GDExtension notes (Turkish)

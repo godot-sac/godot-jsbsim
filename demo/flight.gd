@@ -10,6 +10,7 @@ extends Node3D
 ##   --time-scale X      simulation speed (fast-forward tests)
 ##   --screenshot PATH   save a PNG just before quitting (needs a window, not --headless)
 ##   --cockpit           start with the cockpit camera
+##   --no-hud            start with the HUD text hidden (H), for recordings
 ##   --aileron X         hold a fixed aileron command (input tests)
 ##   --takeoff           FlightAutopilot takes off (with --ground) and climbs straight ahead; with --route the
 ##                       JSBSimAutopilot takes over 150 m above the ground
@@ -71,6 +72,8 @@ func _ready() -> void:
 		pilot.process_mode = Node.PROCESS_MODE_DISABLED
 	if _options.has("cockpit"):
 		cockpit_camera.current = true
+	if _options.has("no-hud"):
+		hud.toggle_text()
 	if _options.has("takeoff"):
 		_autopilot = FlightAutopilot.new(aircraft)
 		_autopilot.heading = aircraft.heading
@@ -146,6 +149,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			hud.toggle_properties()
 		KEY_F4:
 			hud.toggle_joypads()
+		KEY_H:
+			hud.toggle_text()
 		KEY_Y:
 			if autopilot.get_waypoint_count() == 0:
 				_build_route()

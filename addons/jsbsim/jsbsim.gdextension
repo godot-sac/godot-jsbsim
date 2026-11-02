@@ -19,3 +19,8 @@ macos.release = "res://addons/jsbsim/bin/macos/libgodot_jsbsim.macos.template_re
 windows.x86_64 = { "res://addons/jsbsim/bin/windows/JSBSim.dll" : "" }
 linux.x86_64 = { "res://addons/jsbsim/bin/linux/libJSBSim.so.1" : "" }
 macos = { "res://addons/jsbsim/bin/macos/libJSBSim.1.dylib" : "Contents/Frameworks" }
+
+[icons]
+
+JSBSimAircraft = "res://addons/jsbsim/icons/jsbsim_aircraft.svg"
+JSBSimAutopilot = "res://addons/jsbsim/icons/jsbsim_autopilot.svg"

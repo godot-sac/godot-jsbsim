@@ -138,3 +138,34 @@ jobs:
           name: godot-jsbsim-${{ env.VERSION }}
           path: build/package/godot-jsbsim-${{ env.VERSION }}.zip
           if-no-files-found: error
+
+  # A tag vX.Y.Z makes a draft GitHub release with the checked zip and the CHANGELOG section as notes; publish it
+  # by hand after a look (docs/release.md).
+  release:
+    name: Draft release
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+    needs: package
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: godot-jsbsim-*
+          path: dist
+          merge-multiple: true
+      - name: Create the release and attach the zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ls -la dist
+          test -f "dist/godot-jsbsim-$VERSION.zip"
+          awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip --draft --title "godot-jsbsim $VERSION" --notes-file notes.md
+          fi

@@ -4,6 +4,14 @@ All notable changes to this project are documented here. Versions follow [semver
 
 ## [Unreleased]
 ### Added
+- `docs/getting-started.md`: from an empty project and the release zip to a flying aircraft and an autopilot
+  route, with screenshots (tried step by step in a clean Linux directory); `docs/compatibility.md`: what was tested
+  with which Godot version and platform.
+- Editor icons for `JSBSimAircraft`, `JSBSimAutopilot` and `JSBSimInput` (`addons/jsbsim/icons/`); Asset Library
+  icon and social preview image (`docs/images/icon.png`, `social_preview.jpg`).
+- CI: a `vX.Y.Z` tag creates a draft GitHub release with the checked zip and the CHANGELOG section.
+- `tools/make_media.py`: records the README animation (WebP and GIF, release assets) with Godot's Movie Maker.
+- Flight demos: `H` hides the HUD text, `--no-hud` starts that way (the data source lines stay).
 - `JSBSimAutopilot` node (child of `JSBSimAircraft`): heading / altitude / airspeed / vertical-speed holds, waypoint
   routes by geodetic or scene position with per-waypoint height and speed, ground-track guidance with crosswind
   correction and turn anticipation, `loop_route`, `waypoint_reached` and `route_finished` signals, stall protection,
@@ -26,6 +34,8 @@ All notable changes to this project are documented here. Versions follow [semver
   and a vertical normal, no state between ground queries (`test_slope.gd`), joypad mapping (`test_input.gd`), wind and turbulence (`test_atmosphere.gd`);
   `docs/timing.md`.
 ### Fixed
+- `tools/package_addon.py`: the JSBSim version in `JSBSIM_SOURCE.txt` was "unknown" in CI's shallow submodule
+  checkout (now from JSBSim's CMake version); editor `.import` files are left out of the zip.
 - `JSBSimInput` treated a gamepad stick at full deflection as a key and ramped it; the control now follows the
   device that moved it last.
 - Build chain: JSBSim 1.3.3 as a shared library (`tools/build_jsbsim.py`), the extension linked dynamically
