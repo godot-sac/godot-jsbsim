@@ -160,10 +160,10 @@ Both demos publish the aircraft on DIS with `--dis` (godot-dis linked by `tools/
 239.1.2.3, exercise 1, like the godot-dis 2D demo and the godot-geo 3D demo, which show it with the other units.
 `--port N` makes a separate exercise; `--marking TEXT` names it.
 ```sh
-godot --path . res://demo/terrain_flight.tscn -- --ground --takeoff --dis --marking CUB01
+godot --path . res://demo/terrain_flight.tscn -- --route --start-at 1 --dis --marking CUB01   # over the Bosphorus
 tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the network (Open-DIS)
 ```
-![The J3Cub (CUB01, civilian air symbol) on the godot-dis tactical map with the demo's own units](docs/images/dis_map.png)
+![The J3Cub (CUB01, civilian air symbol) off Moda on the godot-dis tactical map, with the godot-dis demo's units around Üsküdar](docs/images/dis_map.png)
 
 ## Documentation
 - [docs/getting-started.md](docs/getting-started.md) — from an empty project to a flying aircraft in ~15 minutes
