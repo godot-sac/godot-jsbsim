@@ -21,7 +21,8 @@ Notes:
 - **Exported games:** the data extraction from a `.pck` is tested with `PCKPacker` + `load_resource_pack`
   (`tests/unit/test_data.gd`); a real export with Godot's export templates has not been tried yet.
 - **Linux libraries** of the release are built on Ubuntu 22.04 (CI), so they should run on glibc 2.35 or newer;
-  older systems are not tried. The zips built locally for testing came from Ubuntu 24.04.
+  older systems are not tried. A zip built locally on a newer distribution needs that distribution's glibc (the
+local test zips came from Ubuntu 24.04 and need glibc 2.38): publish the CI zip, not a local one.
 - **Windows** needs the Microsoft Visual C++ Redistributable 2015–2022 (x64).
 - Only x86_64 on Windows and Linux; no ARM64 Linux / Windows, Android, iOS or Web builds.
 

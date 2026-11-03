@@ -98,6 +98,14 @@ func test_unknown_property_is_an_error() -> void:
 	assert_engine_error_count(2, "set_property and get_property")
 
 
+func test_unparsable_property_name_is_no_property() -> void:
+	# SimGear throws for such names; JSBSimFDM must catch it (an uncaught exception ends the Godot process).
+	var fdm := _airborne("pc7", 150.0)
+	for name: String in ["fcs/throttle cmd", "1fcs", "fcs/[x]", "fcs/a..b"]:
+		assert_false(fdm.has_property(name), "'%s'" % name)
+	assert_true(fdm.has_property("fcs/throttle-cmd-norm[0]"))
+
+
 func test_reset_returns_to_initial_condition() -> void:
 	var fdm := _airborne("pc7", 150.0)
 	fdm.set_property("fcs/throttle-cmd-norm", 0.8)

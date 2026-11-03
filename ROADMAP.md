@@ -24,6 +24,10 @@ Not tried yet: macOS (CI builds it, nobody has run it), Godot 4.3–4.6, the CI 
 - Older Godot versions (4.3–4.6) tried and listed in the compatibility table.
 - Interpolation between JSBSim states for drawing at frame rates far above the simulation rate.
 - Gust inputs (JSBSim's cosine gust) exposed on `JSBSimAircraft` (today through `get_fdm().set_property()`).
+- Class reference in the editor (F1 / Inspector help) from `doc_classes/` XML; today the API is described in
+  `docs/` and the C++ headers.
+- More controls and state on the node instead of raw properties: flaps, gear, mixture, per-engine throttle, initial
+  pitch / roll / climb rate, alpha / beta getters, fuel and mass, repositioning without `restart()`.
 
 ## Later
 - JSBSim scripts (`<runscript>`) run from Godot.

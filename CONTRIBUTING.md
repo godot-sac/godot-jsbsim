@@ -41,6 +41,7 @@ godot --headless --path . --import
 ```sh
 godot --headless --path . -s addons/gut/gut_cmdln.gd                      # Godot tests (GUT)
 ```
+The GUT editor panel is off by default; enable it in *Project Settings → Plugins* to run tests from the editor.
 Flights are compared with the official JSBSim Python package (`tools/oracle_fly.py`), coordinates with pymap3d.
 New behaviour that depends on JSBSim or on coordinate math needs such a reference test.
 

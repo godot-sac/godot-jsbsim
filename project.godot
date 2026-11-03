@@ -14,7 +14,3 @@ config/name="godot-jsbsim"
 config/description="Demo and test project for the godot-jsbsim GDExtension."
 config/features=PackedStringArray("4.7")
 run/main_scene="res://demo/flight.tscn"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/gut/plugin.cfg")

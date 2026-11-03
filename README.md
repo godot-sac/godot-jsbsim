@@ -50,7 +50,7 @@ Step by step, from an empty project to a flying aircraft and an autopilot route:
 [docs/getting-started.md](docs/getting-started.md).
 
 - **Release zip** (once published, or the `godot-jsbsim-*` artifact of a CI run): extract it into your project
-  root; it contains `addons/jsbsim/` with the libraries for Windows, Linux and macOS. Open the project once in the
+  root; it contains `addons/jsbsim/` with the libraries for Windows, Linux and macOS (macOS built by CI, not tried). Open the project once in the
   editor (or run `godot --headless --import`) so the classes are registered.
 - **From source:** build ([docs/building.md](docs/building.md)), then copy `addons/jsbsim/` into your project, or
   pack it with `python tools/package_addon.py`.
@@ -77,6 +77,10 @@ The ground is a flat plane at `ground_level` (scene y, default 0: the origin's h
 `start_on_ground` to start at rest on the gear; `brake` is 0..1. The aircraft stops and emits `crashed(reason)` when
 a wing or another structure contact touches the ground, a wheel touches down faster than `crash_sink_rate` (4 m/s),
 or it ends up below the ground; `restart()` starts again.
+The flat ground is the tangent plane at the origin, not the ellipsoid: 10 km away it is 8 m above the ellipsoid,
+30 km away 70 m (d² / 2R), and geodetic heights (`get_geodetic_position()`, DIS) show that. Keep flat-ground flights
+within a few tens of kilometres of the origin (a warning appears beyond 50 km) or use a terrain node such as
+godot-geo `GeoTerrain`, which follows the Earth's curvature.
 
 ### DIS
 With godot-dis in the project, add a `DisEntity` as a child of the aircraft. The aircraft finds it by class name

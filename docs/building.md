@@ -72,6 +72,8 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"   # your Godot path
 & $godot --headless --path . --import
 & $godot --headless --path . -s addons/gut/gut_cmdln.gd
 ```
+The GUT editor panel is off in `project.godot` (its plugin prints a warning on a project's first open); turn it on
+in *Project → Project Settings → Plugins* if you want to run the tests from the editor.
 C++ unit tests (doctest, no Godot; they link the JSBSim library):
 ```sh
 tools/.venv/Scripts/scons tests

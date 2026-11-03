@@ -43,7 +43,8 @@ frames, or raise `physics_ticks_per_second` (for example to 120, one JSBSim step
 JSBSim asks the ground callback for the height **and the normal** under every gear contact point and under the
 aircraft. `JSBSimAircraft`'s callback:
 
-- returns the height of the `ground_path` node (`height_at(x, z)`) or the flat `ground_level`;
+- returns the height of the `ground_path` node (`height_at(x, z)`) or the flat `ground_level` (a plane in the scene,
+  so it rises above the ellipsoid away from the origin: 70 m at 30 km);
 - returns the normal from the node's `normal_at(x, z)` if it has one, otherwise from the slope of the heights 1 m
   around the point (within one cell of a gridded terrain, that cell's own slope);
 - computes everything from the queried location only and keeps nothing between calls (JSBSim discussion #1510 found

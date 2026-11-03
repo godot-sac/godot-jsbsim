@@ -136,6 +136,24 @@ func test_missing_model() -> void:
 	assert_push_error_count(3)
 
 
+func test_fdm_outlives_the_aircraft() -> void:
+	# get_fdm() hands out the FDM; once the aircraft is freed its ground callback must not point at it any more.
+	var a := _aircraft()
+	var fdm := a.get_fdm()
+	a.free()
+	assert_eq(fdm.step(120), 120)
+	assert_gt(fdm.get_property("position/h-agl-ft"), 0.0, "JSBSim's own ground (the ellipsoid) below")
+
+
+func test_far_from_origin_warns() -> void:
+	var a := _aircraft()
+	a.longitude = LON + 1.0  # about 85 km east, where the flat ground is ~570 m above the ellipsoid
+	a.height = 3000.0
+	a.trim_on_start = false
+	a.start()
+	assert_push_warning_count(1)
+
+
 func test_rudder_right_yaws_right() -> void:
 	var a := _aircraft(90.0)
 	a.rudder = 0.5
