@@ -1,5 +1,9 @@
 #include "jsbsim_data.h"
 
+#include <map>
+#include <mutex>
+#include <string>
+
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
@@ -40,8 +44,20 @@ String resolve(const String &root_dir, String &r_error) {
 		return path;
 	}
 	if (root_dir.begins_with("res://") && DirAccess::dir_exists_absolute(root_dir)) {
-		// Inside the .pck of an exported game.
-		return extract(root_dir, r_error);
+		// Inside the .pck of an exported game: extracted (and its files hashed) once per run, not per aircraft.
+		static std::mutex mutex;
+		static std::map<std::string, std::string> extracted;
+		const std::string key = root_dir.utf8().get_data();
+		std::lock_guard<std::mutex> lock(mutex);
+		const auto found = extracted.find(key);
+		if (found != extracted.end()) {
+			return String::utf8(found->second.c_str());
+		}
+		const String target = extract(root_dir, r_error);
+		if (!target.is_empty()) {
+			extracted[key] = target.utf8().get_data();
+		}
+		return target;
 	}
 	r_error = "JSBSim data folder not found: " + root_dir;
 	return String();

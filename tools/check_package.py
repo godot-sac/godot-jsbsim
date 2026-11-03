@@ -73,8 +73,7 @@ def main() -> int:
                     if line.startswith(("ERROR", "WARNING", "SCRIPT ERROR"))]
         print(f"first import: exit {first.returncode}, {len(problems)} errors or warnings")
         if first.returncode != 0 or problems:
-            print("
-".join(problems[:20]) or first.stderr.strip()[-2000:], file=sys.stderr)
+            print("\n".join(problems[:20]) or first.stderr.strip()[-2000:], file=sys.stderr)
             print("PACKAGE_CHECK FAILED (the first import did not exit cleanly)")
             return 1
         run = subprocess.run([args.godot, "--headless", "--path", str(project), "-s", "res://smoke.gd"],

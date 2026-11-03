@@ -1,6 +1,10 @@
 # Godot
 .godot/
 *.import
+# Committed for the vendored GUT and our icons: the uid in them is what the scenes reference (a fresh clone would
+# otherwise give new uids and "invalid UID" warnings in the editor). The release zip leaves them out.
+!addons/gut/**/*.import
+!addons/jsbsim/icons/*.import
 export_presets.cfg
 /android/
 

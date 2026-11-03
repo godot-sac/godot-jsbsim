@@ -210,13 +210,25 @@ void JSBSimFDM::set_dt(double dt) {
 }
 
 bool JSBSimFDM::has_property(const String &name) const {
-	return fdm && fdm->GetPropertyManager()->HasNode(to_std(name));
+	if (!fdm) {
+		return false;
+	}
+	// SimGear throws for a name it cannot parse (a space, a leading digit, ...): such a name is not a property.
+	bool found = false;
+	String error;
+	guarded([&]() { found = fdm->GetPropertyManager()->HasNode(to_std(name)); }, error);
+	return found;
 }
 
 double JSBSimFDM::get_property(const String &name) const {
 	ERR_FAIL_COND_V_MSG(!fdm, 0.0, "No model loaded.");
 	ERR_FAIL_COND_V_MSG(!has_property(name), 0.0, "Unknown JSBSim property: " + name);
-	return fdm->GetPropertyValue(to_std(name));
+	double value = 0.0;
+	String error;
+	if (!guarded([&]() { value = fdm->GetPropertyValue(to_std(name)); }, error)) {
+		UtilityFunctions::push_error("JSBSimFDM: reading " + name + " failed: " + error);
+	}
+	return value;
 }
 
 bool JSBSimFDM::set_property(const String &name, double value) {

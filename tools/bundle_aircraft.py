@@ -13,7 +13,6 @@ Usage (from the repository root):
 from __future__ import annotations
 
 import argparse
-import filecmp
 import re
 import shutil
 import sys
@@ -132,19 +131,25 @@ def bundle(aircraft: str) -> None:
     print(f"{aircraft}: {sum(1 for p in target.rglob('*') if p.is_file())} files -> {target.relative_to(ROOT)}")
 
 
+def same_text(a: Path, b: Path) -> bool:
+    """Equal apart from line endings: git may check either copy out with CRLF or LF (JSBSim stores COPYING with
+    CRLF and the XML files with LF; core.autocrlf converts on Windows)."""
+    return a.read_bytes().replace(b"\r\n", b"\n") == b.read_bytes().replace(b"\r\n", b"\n")
+
+
 def check(names: list[str]) -> int:
     failures = []
-    if not filecmp.cmp(SOURCE / "COPYING", ADDON / "COPYING.JSBSim", shallow=False):
+    if not same_text(SOURCE / "COPYING", ADDON / "COPYING.JSBSim"):
         failures.append("COPYING.JSBSim differs from thirdparty/jsbsim/COPYING")
     for aircraft in names:
-        comparison = filecmp.dircmp(SOURCE / "aircraft" / aircraft, DATA / "aircraft" / aircraft)
-        pending = [comparison]
-        while pending:
-            current = pending.pop()
-            extra = [name for name in current.right_only if current is not comparison or name != NOTICE]
-            for name in current.left_only + extra + current.diff_files:
-                failures.append(f"{aircraft}: {name} differs")
-            pending.extend(current.subdirs.values())
+        source, target = SOURCE / "aircraft" / aircraft, DATA / "aircraft" / aircraft
+        ours = {p.relative_to(target) for p in target.rglob("*") if p.is_file()} - {Path(NOTICE)}
+        theirs = {p.relative_to(source) for p in source.rglob("*") if p.is_file()}
+        for name in sorted(ours ^ theirs):
+            failures.append(f"{aircraft}: {name.as_posix()} differs")
+        for name in sorted(ours & theirs):
+            if not same_text(source / name, target / name):
+                failures.append(f"{aircraft}: {name.as_posix()} differs")
         notice_path = DATA / "aircraft" / aircraft / NOTICE
         if not notice_path.is_file() or notice_path.read_text(encoding="utf-8") != notice(aircraft):
             failures.append(f"{aircraft}: {NOTICE} is missing or out of date")

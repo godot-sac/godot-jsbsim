@@ -25,6 +25,7 @@ class JSBSimAircraft : public godot::Node3D {
 
 public:
 	JSBSimAircraft();
+	~JSBSimAircraft() override;
 
 	// Loads the model and applies the initial condition. Called from _ready() at run time; call it again after
 	// changing aircraft or data_dir. Returns false (see get_fdm().get_last_error()) on failure.

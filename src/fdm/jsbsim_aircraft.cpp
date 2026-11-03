@@ -36,6 +36,9 @@ constexpr int MAX_STEPS_PER_ADVANCE = 2400;
 // few steps before it becomes NaN.
 constexpr double MAX_ECEF_DISTANCE = 1e9; // m, well past the Moon's orbit
 constexpr double MAX_SPEED = 1e5; // m/s
+// Start positions farther than this from the scene origin get a warning: the flat ground plane is 200 m above the
+// ellipsoid at 50 km (d² / 2R).
+constexpr double MAX_ORIGIN_DISTANCE = 50000.0; // m
 // DIS entity appearance, air platform: bits 3-4 damage (3 = destroyed).
 constexpr int64_t APPEARANCE_DAMAGE_MASK = 3 << 3;
 constexpr int64_t APPEARANCE_DESTROYED = 3 << 3;
@@ -125,6 +128,17 @@ JSBSimAircraft::JSBSimAircraft() {
 	fdm.instantiate();
 }
 
+JSBSimAircraft::~JSBSimAircraft() {
+	// get_fdm() hands the FDM out, so it may outlive this node: give it back JSBSim's own ground, which does not
+	// point here (the ground callback below keeps a pointer to its aircraft).
+	JSBSim::FGFDMExec *exec = fdm->get_exec();
+	if (exec) {
+		auto inertial = exec->GetInertial();
+		inertial->SetGroundCallback(
+				new JSBSim::FGDefaultGroundCallback(inertial->GetSemimajor(), inertial->GetSemiminor()));
+	}
+}
+
 void JSBSimAircraft::_ready() {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
@@ -168,6 +182,14 @@ bool JSBSimAircraft::apply_initial_condition() {
 		h = origin->get("height");
 	}
 	frame = LocalFrame({ Math::deg_to_rad(lat), Math::deg_to_rad(lon), h });
+	// The scene is a tangent plane at the origin: far from it the flat ground (and float precision) are off.
+	const Vec3 start = frame.ecef_to_enu(geodetic_to_ecef({ Math::deg_to_rad(latitude), Math::deg_to_rad(longitude), h }));
+	const double distance = std::hypot(start.x, start.y);
+	if (distance > MAX_ORIGIN_DISTANCE) {
+		UtilityFunctions::push_warning(vformat("JSBSimAircraft: the start is %.0f km from the scene origin; set "
+											   "origin_latitude / origin_longitude (or geo_origin_path) near the aircraft.",
+				distance / 1000.0));
+	}
 
 	ground_id = ObjectID();
 	ground_has_normal = false;
