@@ -54,8 +54,6 @@ func _setup_world() -> void:
 	terrain.set_script(load(GEO_TERRAIN))
 	terrain.name = "Terrain"
 	terrain.set("collision_enabled", false)  # JSBSim does its own ground contact
-	# Buildings, roads and trees are only seen (not ground); headless test runs leave them out.
-	terrain.set("auto_layers", DisplayServer.get_name() != "headless")
 	add_child(terrain)
 	move_child(terrain, 0)
 	terrain.set("package_path", package)

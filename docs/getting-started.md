@@ -33,7 +33,8 @@ my_flight/
         ├── jsbsim.gdextension
         ├── bin/windows/ bin/linux/ bin/macos/   the extension and the JSBSim library (LGPL-2.1)
         ├── data/aircraft/J3Cub/                  the bundled aircraft (JSBSim data, LGPL-2.1)
-        ├── COPYING.JSBSim  JSBSIM_SOURCE.txt  LICENSE  THIRD_PARTY_NOTICES.md
+        ├── COPYING.JSBSim  COPYING.Expat  COPYING.GeographicLib  JSBSIM_SOURCE.txt  LICENSE
+        ├── THIRD_PARTY_NOTICES.md
         └── jsbsim_input.gd  jsbsim_dis_types.gd  icons/
 ```
 ```sh
@@ -248,7 +249,7 @@ above the ellipsoid and the speed in knots. Other targets: `target_heading`, `ta
   `JSBSimFDM` class for JSBSim without a node.
 - [aircraft.md](aircraft.md): other JSBSim aircraft (check their licences first).
 - **Exporting your game:** add `*.xml` to *Project → Export → Resources → Filters to export non-resource files*,
-  so the aircraft data is in the `.pck`. Keep the JSBSim library a separate file and ship `COPYING.JSBSim` and
+  so the aircraft data is in the `.pck`. Keep the JSBSim library a separate file and ship the `COPYING.*` files and
   `JSBSIM_SOURCE.txt` with the game ([licensing.md](licensing.md)).
 
 ## Troubleshooting

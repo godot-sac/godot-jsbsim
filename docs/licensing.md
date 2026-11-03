@@ -17,7 +17,8 @@
 The release zip carries `JSBSIM_SOURCE.txt` with the exact JSBSim tag and commit and where to get the source.
 
 If you ship a game with godot-jsbsim, keep the JSBSim library a separate, replaceable file, include
-`COPYING.JSBSim` and `JSBSIM_SOURCE.txt` and point to the JSBSim source. Your own code is not affected by the LGPL.
+`COPYING.JSBSim`, `COPYING.Expat`, `COPYING.GeographicLib` (code inside the JSBSim library, MIT) and
+`JSBSIM_SOURCE.txt` and point to the JSBSim source. Your own code is not affected by the LGPL.
 
 ## Replacing the JSBSim library
 The LGPL lets every user run the program with a modified JSBSim. With godot-jsbsim:

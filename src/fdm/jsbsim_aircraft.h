@@ -173,6 +173,7 @@ private:
 	double wind_direction = 270.0; // degrees true, from
 	int turbulence = 0; // MIL-F-8785C severity 0..7
 	godot::ObjectID ground_id;
+	godot::Object *ground_node() const;
 	bool ground_has_normal = false; // the ground node has normal_at(x, z)
 
 	godot::NodePath geo_origin_path;

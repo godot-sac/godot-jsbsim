@@ -1,11 +1,12 @@
 # Making a release
 
-1. Update `CHANGELOG.md`: move *Unreleased* to `## [x.y.z] - YYYY-MM-DD` (semver; 0.x while the API may change).
+1. Update `CHANGELOG.md`: the version's section `## [x.y.z] - Unreleased` gets the release date instead of
+   *Unreleased* (semver; 0.x while the API may change). `package_addon.py` refuses a version without a section.
 2. Check locally: GUT, `scons tests`, the demos' `FLIGHT_CHECK` runs, `tools/wsl_check.sh` (Linux) and
    `python tools/package_addon.py` + `python tools/check_package.py build/package/godot-jsbsim-dev.zip --godot <godot>`.
 3. Commit, tag `vx.y.z` and push the tag. CI builds all platforms, packs `godot-jsbsim-x.y.z.zip`
-   (`addons/jsbsim/` with the libraries for Windows, Linux and macOS, `COPYING.JSBSim`, `LICENSE`,
-   `THIRD_PARTY_NOTICES.md` and `JSBSIM_SOURCE.txt`), checks it in a new project and creates a **draft** GitHub
+   (`addons/jsbsim/` with the libraries for Windows, Linux and macOS, `COPYING.JSBSim`, `COPYING.Expat`,
+   `COPYING.GeographicLib`, `LICENSE`, `THIRD_PARTY_NOTICES.md` and `JSBSIM_SOURCE.txt`), checks it in a new project and creates a **draft** GitHub
    release for the tag with the zip attached and the CHANGELOG section as notes (job `release`).
 4. Attach the README animation to the draft (see *Media*), read it through and publish it. The README shows the
    animation from `releases/latest/download/`, so it appears once a release is published.

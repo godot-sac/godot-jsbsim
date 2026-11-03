@@ -13,8 +13,14 @@ JSBSim is built as a separate shared library (`JSBSim.dll`, `libJSBSim.so.1`, `l
 dynamically by the extension; it can be replaced by the user. Copyright the JSBSim authors (see
 `thirdparty/jsbsim/AUTHORS`). Details: [docs/licensing.md](docs/licensing.md).
 
-JSBSim bundles third-party code of its own (Expat, parts of SimGear, GeographicLib, an MSIS atmosphere model);
-their notices are in the JSBSim source tree.
+JSBSim bundles third-party code of its own, compiled into the JSBSim library; the release zip ships their licences
+next to `COPYING.JSBSim`:
+- Expat XML parser (`src/simgear/xml/`) — MIT License, Copyright (c) 1998-2000 Thai Open Source Software Center Ltd
+  and Clark Cooper, Copyright (c) 2001-2019 Expat maintainers. Shipped as `COPYING.Expat`.
+- GeographicLib (`src/GeographicLib/`) — MIT License, Copyright (c) 2008-2022 Charles Karney. Shipped as
+  `COPYING.GeographicLib`.
+- Parts of SimGear (LGPL, like JSBSim) and an MSIS atmosphere model (public domain); their notices are in the
+  JSBSim source tree.
 
 ### JSBSim aircraft data
 `addons/jsbsim/data/` — **not covered by this project's MIT license.** Copied unmodified from JSBSim 1.3.3 by
@@ -46,3 +52,24 @@ Full text: `thirdparty/doctest/LICENSE.txt`.
 
 ### JSBSim Python package 1.3.3
 `pip install jsbsim==1.3.3` (LGPL-2.1), used by `tools/oracle_fly.py` as a reference in the tests.
+
+### Other Python tools (`tools/requirements.txt`)
+SCons (MIT), CMake (BSD-3-Clause), NumPy (BSD-3-Clause), Open-DIS Python `opendis` (BSD-2-Clause, used by
+`tools/dis_capture.py`), pymap3d (BSD-2-Clause); Pillow (MIT-CMU, only for `tools/make_media.py`). Installed by the
+developer with pip, not copied into this repository.
+
+### Sibling projects in the demos
+`demo/terrain_flight.tscn`, the `--terrain` and `--dis` options use godot-geo and godot-dis (MIT), linked next to
+this repository by `tools/link_siblings.py`; nothing of them is copied here.
+
+## Data shown in the documentation images
+`docs/images/terrain_flight.jpg`, `docs/images/social_preview.jpg` and the README animation show godot-geo's
+Istanbul terrain package; the terrain demo shows the same lines on screen:
+produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided
+under COPERNICUS by the European Union and ESA; all rights reserved. Contains modified Copernicus Sentinel data 2025.
+© OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0, https://www.openstreetmap.org/copyright).
+© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover
+consortium (CC BY 4.0). Canopy height: Lang, N., Jetz, W., Schindler, K., Wegner, J. D. (2023), A high-resolution
+canopy height model of the Earth, Nature Ecology & Evolution; ETH Global Canopy Height 2020,
+doi:10.3929/ethz-b-000609802 (CC BY 4.0). Building heights: Pesaresi, M., Politis, P. (2023), GHS-BUILT-H R2023A,
+European Commission, Joint Research Centre, doi:10.2905/85005901-3A49-48DD-9D19-6261354F56FE (CC BY 4.0).

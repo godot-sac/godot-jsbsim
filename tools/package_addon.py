@@ -2,7 +2,8 @@
 
 Checks that every requested platform has the extension (debug and release) and the JSBSim library listed in
 jsbsim.gdextension, checks the bundled aircraft (tools/bundle_aircraft.py --check), leaves out linker files
-(.lib, .exp, .pdb) and editor import files, and adds LICENSE, THIRD_PARTY_NOTICES.md and JSBSIM_SOURCE.txt (the
+(.lib, .exp, .pdb) and editor import files, and adds LICENSE, THIRD_PARTY_NOTICES.md, the licences of the code
+inside the JSBSim library (COPYING.Expat, COPYING.GeographicLib) and JSBSIM_SOURCE.txt (the
 JSBSim version and where its source is, as the LGPL asks).
 
 Usage (from the repo root, any Python 3):
@@ -18,6 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ADDON = ROOT / "addons" / "jsbsim"
+JSBSIM = ROOT / "thirdparty" / "jsbsim"
 PLATFORMS = ["windows", "linux", "macos"]
 SKIPPED_SUFFIXES = {".lib", ".exp", ".pdb", ".ilk", ".import"}
 JSBSIM_URL = "https://github.com/JSBSim-Team/jsbsim"
@@ -88,6 +90,11 @@ def main() -> int:
         print("no platform is built (addons/jsbsim/bin/<platform>/); see docs/building.md", file=sys.stderr)
         return 1
 
+    released = re.fullmatch(r"\d+\.\d+\.\d+", args.version)
+    if released and f"## [{args.version}]" not in (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"):
+        print(f"CHANGELOG.md has no [{args.version}] section", file=sys.stderr)
+        return 1
+
     missing = [f for p in platforms for f in required_files(p) if not (ADDON / f).is_file()]
     if missing:
         print("missing files:\n  " + "\n  ".join(missing), file=sys.stderr)
@@ -107,6 +114,9 @@ def main() -> int:
         files.append((path, "addons/jsbsim/" + rel.as_posix()))
     files.append((ROOT / "LICENSE", "addons/jsbsim/LICENSE"))
     files.append((ROOT / "THIRD_PARTY_NOTICES.md", "addons/jsbsim/THIRD_PARTY_NOTICES.md"))
+    # Code compiled into the JSBSim library under its own (MIT) licences, whose notices must travel with it.
+    files.append((JSBSIM / "src" / "simgear" / "xml" / "COPYING", "addons/jsbsim/COPYING.Expat"))
+    files.append((JSBSIM / "src" / "GeographicLib" / "LICENSE.txt", "addons/jsbsim/COPYING.GeographicLib"))
 
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / f"godot-jsbsim-{args.version}.zip"

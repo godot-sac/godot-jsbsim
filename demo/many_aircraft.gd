@@ -94,7 +94,6 @@ func _setup_terrain() -> Node:
 	terrain.set_script(load(GEO_TERRAIN))
 	terrain.name = "Terrain"
 	terrain.set("collision_enabled", false)
-	terrain.set("auto_layers", DisplayServer.get_name() != "headless")  # buildings and trees: seen only
 	add_child(terrain)
 	terrain.set("package_path", package)
 	var info: Object = terrain.get("package")

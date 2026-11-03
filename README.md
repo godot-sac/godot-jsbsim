@@ -4,7 +4,7 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-> 🚧 Pre-release: features for v0.1.0 are done, no release yet. See [PLAN.md](PLAN.md).
+> 🚧 Pre-release: features for v0.1.0 are done, no release yet. See [ROADMAP.md](ROADMAP.md).
 
 ![The J3Cub flying its autopilot route over the Bosphorus in Istanbul on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings), twice the real speed](https://github.com/OWNER/godot-jsbsim/releases/latest/download/godot-jsbsim-flight.webp)
 
@@ -56,7 +56,7 @@ Step by step, from an empty project to a flying aircraft and an autopilot route:
   pack it with `python tools/package_addon.py`.
 
 The JSBSim library (LGPL-2.1) stays a separate file in `addons/jsbsim/bin/<platform>/`; keep it that way in your
-exported game and ship `COPYING.JSBSim` and `JSBSIM_SOURCE.txt` with it ([docs/licensing.md](docs/licensing.md)).
+exported game and ship the `COPYING.*` files and `JSBSIM_SOURCE.txt` with it ([docs/licensing.md](docs/licensing.md)).
 
 ## Usage
 ### Aircraft node
@@ -178,6 +178,7 @@ tools/.venv/Scripts/python tools/dis_capture.py      # decodes the PDUs on the n
 - [docs/release.md](docs/release.md) — making a release, Asset Library
 - [docs/licensing.md](docs/licensing.md) — LGPL compliance, replacing the JSBSim library, aircraft data
 - [docs/cpp-notes.md](docs/cpp-notes.md) — C++ / GDExtension notes (Turkish)
+- [ROADMAP.md](ROADMAP.md) — status and possible next steps
 
 ## Development
 ```sh

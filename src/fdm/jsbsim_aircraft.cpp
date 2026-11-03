@@ -339,22 +339,31 @@ void JSBSimAircraft::check_crash() {
 	}
 }
 
+// The ground_path node, if it still exists and is in the scene tree (a Node3D outside the tree has no transform,
+// e.g. while the scene is being freed).
+Object *JSBSimAircraft::ground_node() const {
+	if (!ground_id.is_valid()) {
+		return nullptr;
+	}
+	Object *ground = ObjectDB::get_instance(ground_id);
+	Node *node = Object::cast_to<Node>(ground);
+	return node && !node->is_inside_tree() ? nullptr : ground;
+}
+
 double JSBSimAircraft::get_ground_height(double x, double z) const {
-	if (ground_id.is_valid()) {
-		Object *ground = ObjectDB::get_instance(ground_id);
-		if (ground) {
-			const double h = ground->call("height_at", x, z);
-			if (std::isfinite(h)) {
-				return h;
-			}
+	Object *ground = ground_node();
+	if (ground) {
+		const double h = ground->call("height_at", x, z);
+		if (std::isfinite(h)) {
+			return h;
 		}
 	}
 	return ground_level;
 }
 
 Vec3 JSBSimAircraft::ground_normal(double x, double z) const {
-	if (ground_has_normal && ground_id.is_valid()) {
-		Object *ground = ObjectDB::get_instance(ground_id);
+	if (ground_has_normal) {
+		Object *ground = ground_node();
 		if (ground) {
 			const Vector3 n = ground->call("normal_at", x, z);
 			const double length = n.length();
