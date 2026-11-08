@@ -7,7 +7,7 @@ A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, re
 **Status:** 0.1.0, the first release. Tested with Godot 4.7.2 on Windows and Linux; plans in [ROADMAP.md](ROADMAP.md).
 Part of [Godot SAC](https://github.com/godot-sac): stand-alone add-ons for terrain, military symbology, DIS and flight dynamics that also work together.
 
-![The J3Cub flying its autopilot route over the Bosphorus in Istanbul on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings), twice the real speed](https://github.com/godot-sac/godot-jsbsim/releases/latest/download/godot-jsbsim-flight.webp)
+![The J3Cub over the Bosphorus in Istanbul on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings)](docs/images/terrain_flight.jpg)
 
 ## Features
 Done:
