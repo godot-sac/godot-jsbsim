@@ -10,7 +10,7 @@ About 15 minutes; no C++ build, only the release zip. Everything is in one GDScr
 - **Windows x86_64** (with the [Microsoft Visual C++ Redistributable 2015–2022](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist),
   usually already installed) or **Linux x86_64**. macOS libraries are in the zip but have not been tried yet.
 - The release zip **`godot-jsbsim-<version>.zip`** from the
-  [releases page](https://github.com/OWNER/godot-jsbsim/releases) (or the `godot-jsbsim-*` artifact of a CI run).
+  [releases page](https://github.com/godot-sac/godot-jsbsim/releases) (or the `godot-jsbsim-*` artifact of a CI run).
 
 ## 1. Create a project (2 min)
 In the Project Manager: **Create**, name it `my_flight`, renderer **Forward+** (Mobile also works), **Create**.

@@ -3,7 +3,7 @@
 What each godot-jsbsim version was actually tried with. "Declared" means the extension says it loads there
 (`compatibility_minimum` in `jsbsim.gdextension`), not that it was run.
 
-## godot-jsbsim 0.1.0 (not released yet)
+## godot-jsbsim 0.1.0
 JSBSim 1.3.3 (shared library, LGPL-2.1), godot-cpp 10 built against the Godot 4.3 extension API.
 
 | Godot | Platform | Build | Status | What was run |
