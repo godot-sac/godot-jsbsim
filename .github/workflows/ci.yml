@@ -1,4 +1,4 @@
-# Builds JSBSim (shared library, cached per JSBSim commit) and the GDExtension for Windows, Linux and macOS, runs the
+# Builds JSBSim (shared library, cached per JSBSim commit) and the GDExtension for Windows and Linux, runs the
 # C++ (doctest) and Godot (GUT) tests on each, then packs addons/jsbsim with all libraries into one zip
 # (tools/package_addon.py) and checks it in a new, empty project (tools/check_package.py).
 name: CI

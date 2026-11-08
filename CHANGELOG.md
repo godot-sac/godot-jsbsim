@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-11-08
 First release.
 
 ### Added
@@ -14,7 +14,7 @@ First release.
   `THIRD_PARTY_NOTICES.md`, `COPYING.JSBSim`, `COPYING.Expat`, `COPYING.GeographicLib` and `JSBSIM_SOURCE.txt`
   (JSBSim tag, commit and source). `tools/check_package.py` installs the zip in a new, empty project, checks the
   licence notes and a first import without errors or warnings, and flies the J3Cub.
-- CI for Windows, Linux and macOS: JSBSim build cached per commit, GUT, C++ tests, the package checked in a new
+- CI for Windows and Linux: JSBSim build cached per commit, GUT, C++ tests, the package checked in a new
   project; a `vX.Y.Z` tag creates a draft GitHub release with the zip and this file's section as notes.
 
 **Flight model**
@@ -71,4 +71,4 @@ First release.
 ### Known issues
 - Godot 4.7's first headless import of a new project could crash on exit when it discovers the extension
   (godotengine/godot#111048); `src/editor_first_load_guard.cpp` works around it.
-- Tested on Godot 4.7.2 only, on Windows and Linux; macOS is built by CI but has not been run.
+- Tested on Godot 4.7.2 only, on Windows and Linux; macOS has not been built or run yet.
