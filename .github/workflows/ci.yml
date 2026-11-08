@@ -34,13 +34,7 @@ jobs:
             scons_args: ""
             godot_zip: Godot_v4.7.2-stable_linux.x86_64.zip
             godot_exe: godot_bin/Godot_v4.7.2-stable_linux.x86_64
-          - name: macOS
-            os: macos-latest
-            platform: macos
-            jsbsim_args: --arch "arm64;x86_64"
-            scons_args: arch=universal
-            godot_zip: Godot_v4.7.2-stable_macos.universal.zip
-            godot_exe: godot_bin/Godot.app/Contents/MacOS/Godot
+          # macOS is not in the 0.1 scope (untested); the build files support it, see docs/compatibility.md.
     defaults:
       run:
         shell: bash
@@ -120,13 +114,13 @@ jobs:
           path: artifacts
       - name: Pack addons/jsbsim (all platforms)
         run: |
-          for platform in windows linux macos; do
+          for platform in windows linux; do
             mkdir -p "addons/jsbsim/bin/$platform"
             cp -r "artifacts/bin-$platform/." "addons/jsbsim/bin/$platform/"
           done
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="dev-${GITHUB_SHA::7}"; fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          python3 tools/package_addon.py --version "$VERSION" --platforms windows,linux,macos
+          python3 tools/package_addon.py --version "$VERSION" --platforms windows,linux
           python3 -m zipfile -l "build/package/godot-jsbsim-$VERSION.zip"
       - name: Check the package in a new project (Linux)
         run: |

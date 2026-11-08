@@ -43,7 +43,7 @@ Not yet: a published release with prebuilt libraries (CI builds the package; see
 
 ## Requirements
 - Godot 4.3 or newer (developed and tested with 4.7.2; see [docs/compatibility.md](docs/compatibility.md))
-- Windows x86_64 (with the Microsoft Visual C++ Redistributable 2015–2022), Linux x86_64; macOS through CI only
+- Windows x86_64 (with the Microsoft Visual C++ Redistributable 2015–2022), Linux x86_64 (macOS: untested, not in the release zip)
 - To build from source: see [docs/building.md](docs/building.md)
 
 ## Installation
@@ -51,7 +51,7 @@ Step by step, from an empty project to a flying aircraft and an autopilot route:
 [docs/getting-started.md](docs/getting-started.md).
 
 - **Release zip** (once published, or the `godot-jsbsim-*` artifact of a CI run): extract it into your project
-  root; it contains `addons/jsbsim/` with the libraries for Windows, Linux and macOS (macOS built by CI, not tried). Open the project once in the
+  root; it contains `addons/jsbsim/` with the libraries for Windows and Linux. Open the project once in the
   editor (or run `godot --headless --import`) so the classes are registered.
 - **From source:** build ([docs/building.md](docs/building.md)), then copy `addons/jsbsim/` into your project, or
   pack it with `python tools/package_addon.py`.
