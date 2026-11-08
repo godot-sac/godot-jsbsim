@@ -20,7 +20,8 @@ jobs:
       matrix:
         include:
           - name: Windows
-            os: windows-latest
+            # Visual Studio 2022, the toolchain the Windows builds are made and tested with.
+            os: windows-2022
             platform: windows
             jsbsim_args: ""
             scons_args: ""

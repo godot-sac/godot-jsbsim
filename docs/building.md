@@ -32,7 +32,7 @@ Linux/macOS: `python3 -m venv tools/.venv && tools/.venv/bin/pip install -r tool
 Linux/macOS: the same with `tools/.venv/bin/python` and `tools/.venv/bin/scons`; on macOS add
 `--arch "arm64;x86_64"` to `build_jsbsim.py` and `arch=universal` to SCons.
 
-`build_jsbsim.py` uses the Visual Studio 2022 CMake generator on Windows (no developer prompt needed) and puts the
+`build_jsbsim.py` uses the Visual Studio 2022 CMake generator on Windows (no developer prompt needed; set `CMAKE_GENERATOR` to use another Visual Studio) and puts the
 import library / link-time copy in `build/jsbsim/<platform>/lib/`, which `SConstruct` links against.
 After rebuilding, restart the Godot editor if it had the old libraries loaded.
 

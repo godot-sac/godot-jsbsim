@@ -13,6 +13,7 @@ Windows uses the Visual Studio 2022 generator (no developer prompt needed), Linu
 from __future__ import annotations
 
 import argparse
+import os
 import platform
 import shutil
 import subprocess
@@ -71,7 +72,10 @@ def main() -> None:
     ]
     if plat == "windows":
         # /utf-8: the JSBSim sources are UTF-8; without it MSVC warns (C4819) on non-English code pages.
-        configure += ["-G", "Visual Studio 17 2022", "-A", "x64", "-DCMAKE_CXX_FLAGS_INIT=/utf-8"]
+        # Visual Studio 2022 unless CMAKE_GENERATOR names another one (e.g. "Visual Studio 18 2026").
+        if not os.environ.get("CMAKE_GENERATOR"):
+            configure += ["-G", "Visual Studio 17 2022"]
+        configure += ["-A", "x64", "-DCMAKE_CXX_FLAGS_INIT=/utf-8"]
     if plat == "macos" and args.arch:
         configure.append(f"-DCMAKE_OSX_ARCHITECTURES={args.arch}")
     run(configure)
