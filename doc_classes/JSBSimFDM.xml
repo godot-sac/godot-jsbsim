@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JSBSimFDM" inherits="RefCounted" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		One JSBSim flight dynamics model: loads an aircraft, sets the initial condition, trims, steps and gives access to JSBSim properties.
+	</brief_description>
+	<description>
+		Wraps a JSBSim flight dynamics executive (JSBSim 1.3.3). It is the low-level interface: load a model with [method load_model], set the initial condition with [method set_initial_position], [method set_initial_orientation] and [method set_initial_airspeed], apply it with [method run_ic] (or [method reset]), optionally [method trim], then call [method step] and read or write properties with [method get_property] and [method set_property]. Most games use [JSBSimAircraft], which owns an [JSBSimFDM], steps it at a fixed rate and places a node in the scene; use [method JSBSimAircraft.get_fdm] to reach it.
+		Errors never crash the game. JSBSim exceptions are caught, reported with [method @GlobalScope.push_error] and kept in [method get_last_error]; methods that can fail return [code]false[/code] (or 0 / an empty value).
+		Units follow JSBSim's property names: [code]-ft[/code], [code]-fps[/code], [code]-kts[/code], [code]-deg[/code], [code]-rad[/code] and so on, so [method get_property] and [method set_property] values are in whatever unit the property name says (feet, not metres, for [code]position/h-agl-ft[/code]). The convenience methods of this class use degrees, metres and knots as documented on each of them.
+		[codeblock]
+		var fdm := JSBSimFDM.new()
+		if fdm.load_model("J3Cub"):
+			fdm.set_initial_position(41.0, 29.0, 1000.0) # degrees, degrees, metres above the ellipsoid
+			fdm.set_initial_orientation(90.0, 0.0, 0.0)  # heading, pitch, roll in degrees
+			fdm.set_initial_airspeed(70.0)               # calibrated knots
+			fdm.run_ic()
+			fdm.start_engines()
+			fdm.trim()
+			fdm.step(120)                                # one second at the default 120 Hz
+			print(fdm.get_property("velocities/vc-kts"))
+		else:
+			push_error(fdm.get_last_error())
+		[/codeblock]
+	</description>
+	<tutorials>
+		<link title="Using other aircraft">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/aircraft.md</link>
+		<link title="Troubleshooting">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/troubleshooting.md</link>
+	</tutorials>
+	<methods>
+		<method name="extract_data_dir" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="res_dir" type="String" />
+			<description>
+				Copies the [code]res://[/code] data folder [param res_dir] to [code]user://jsbsim/&lt;name&gt;-&lt;fingerprint&gt;/[/code] and returns its absolute OS path. The fingerprint is derived from the names and MD5 sums of the files, so an unchanged folder is extracted once and reused.
+				[method load_model] does this automatically when the data folder only exists inside an exported [code].pck[/code]; call this method to extract ahead of time. Returns an empty string and pushes an error if the folder cannot be listed or written.
+			</description>
+		</method>
+		<method name="get_data_path" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the absolute OS path JSBSim reads its data from (the extracted copy in [code]user://[/code] in exported games). Empty before a successful [method load_model].
+			</description>
+		</method>
+		<method name="get_debug_level" qualifiers="static">
+			<return type="int" />
+			<description>
+				Returns JSBSim's global verbosity level set by [method set_debug_level]. The default is 0.
+			</description>
+		</method>
+		<method name="get_dt" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the JSBSim time step in seconds. Returns 0.0 and pushes an error if no model is loaded.
+			</description>
+		</method>
+		<method name="get_jsbsim_version" qualifiers="static">
+			<return type="String" />
+			<description>
+				Returns the version of the bundled JSBSim library, for example [code]"1.3.3"[/code].
+			</description>
+		</method>
+		<method name="get_last_error" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the message of the last error of this object (a failed load, run, trim, step or property write), or an empty string. [method load_model] clears it.
+			</description>
+		</method>
+		<method name="get_log_level" qualifiers="static">
+			<return type="int" />
+			<description>
+				Returns the minimum level of JSBSim messages sent to the Godot output, as set by [method set_log_level]. The default is [constant LOG_WARN].
+			</description>
+		</method>
+		<method name="get_model_name" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the name of the loaded model as JSBSim reports it, or an empty string if no model is loaded.
+			</description>
+		</method>
+		<method name="get_property" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="name" type="String" />
+			<description>
+				Returns the value of the JSBSim property [param name] (for example [code]"velocities/vc-kts"[/code]), in the unit given by the property name. Pushes an error and returns 0.0 if no model is loaded or the property does not exist; check with [method has_property] first when the name comes from user input.
+			</description>
+		</method>
+		<method name="get_property_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<param index="0" name="filter" type="String" default="&quot;&quot;" />
+			<description>
+				Returns the names of the properties of the loaded model. If [param filter] is not empty, only names containing it (case-sensitive) are returned. The access flags JSBSim lists after the name are removed. Returns an empty array and pushes an error if no model is loaded.
+			</description>
+		</method>
+		<method name="get_sim_time" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the simulation time in seconds since the last [method reset] (the sum of the steps done). Returns 0.0 and pushes an error if no model is loaded.
+			</description>
+		</method>
+		<method name="has_property" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="name" type="String" />
+			<description>
+				Returns [code]true[/code] if the loaded model has a property called [param name]. Names JSBSim cannot parse (containing spaces, starting with a digit) are not properties. Returns [code]false[/code] if no model is loaded.
+			</description>
+		</method>
+		<method name="is_loaded" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] after a successful [method load_model].
+			</description>
+		</method>
+		<method name="load_model">
+			<return type="bool" />
+			<param index="0" name="aircraft" type="String" />
+			<param index="1" name="data_dir" type="String" default="&quot;res://addons/jsbsim/data&quot;" />
+			<description>
+				Loads the aircraft [param aircraft] (the name of a folder under [code]aircraft/[/code] and of its XML file, for example [code]"J3Cub"[/code]) from the data folder [param data_dir]. The data folder contains [code]aircraft/[/code] and optionally [code]engine/[/code] and [code]systems/[/code]; it can be a [code]res://[/code] path or an absolute path. A previously loaded model is discarded.
+				In an exported game a [code]res://[/code] folder inside the [code].pck[/code] is extracted to [code]user://jsbsim/[/code] first (see [method extract_data_dir]).
+				Returns [code]false[/code] on failure; the reason is in [method get_last_error] and the JSBSim messages in the output. The default [param data_dir] is [code]res://addons/jsbsim/data[/code].
+			</description>
+		</method>
+		<method name="reset">
+			<return type="bool" />
+			<description>
+				Restarts the model from the initial condition and sets the simulation time to 0. Returns [code]false[/code] on failure. Does nothing and pushes an error if no model is loaded.
+			</description>
+		</method>
+		<method name="resolve_data_dir" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data_dir" type="String" />
+			<description>
+				Returns the absolute OS path of the data folder [param data_dir]: the folder itself if it exists on disk, otherwise (for a [code]res://[/code] folder inside an exported [code].pck[/code]) the extracted copy from [method extract_data_dir]. Returns an empty string and pushes an error if it cannot be found.
+			</description>
+		</method>
+		<method name="run_ic">
+			<return type="bool" />
+			<description>
+				Applies the initial condition set with [method set_initial_position], [method set_initial_orientation] and [method set_initial_airspeed] and initializes the model. Returns [code]false[/code] on failure. Call it before the first [method step].
+			</description>
+		</method>
+		<method name="set_debug_level" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="level" type="int" />
+			<description>
+				Sets JSBSim's own verbosity (its [code]debug_lvl[/code] bit mask) for all models, [code]0[/code] being silent (the default) and [code]1[/code] normal console output such as the model summary and the trim report. It applies to models loaded afterwards.
+			</description>
+		</method>
+		<method name="set_dt">
+			<return type="void" />
+			<param index="0" name="dt" type="float" />
+			<description>
+				Sets the JSBSim time step in seconds. [param dt] must be greater than 0, otherwise an error is pushed and nothing changes. [JSBSimAircraft] sets the time step from its [member JSBSimAircraft.rate] before every step, so changing it on the [JSBSimFDM] of an aircraft node has no lasting effect.
+			</description>
+		</method>
+		<method name="set_initial_airspeed">
+			<return type="void" />
+			<param index="0" name="calibrated_kts" type="float" />
+			<description>
+				Sets the initial [b]calibrated[/b] airspeed in knots. Takes effect with [method run_ic] or [method reset].
+			</description>
+		</method>
+		<method name="set_initial_orientation">
+			<return type="void" />
+			<param index="0" name="heading" type="float" />
+			<param index="1" name="pitch" type="float" />
+			<param index="2" name="roll" type="float" />
+			<description>
+				Sets the initial true heading, pitch and roll in degrees. Takes effect with [method run_ic] or [method reset].
+			</description>
+		</method>
+		<method name="set_initial_position">
+			<return type="void" />
+			<param index="0" name="latitude" type="float" />
+			<param index="1" name="longitude" type="float" />
+			<param index="2" name="height" type="float" />
+			<description>
+				Sets the initial geodetic [param latitude] and [param longitude] in degrees and [param height] in metres above the WGS84 ellipsoid. Takes effect with [method run_ic] or [method reset].
+				[b]Note:[/b] This is not JSBSim's [code]ic/h-sl-ft[/code]; the height is converted so that the geodetic height of the start matches [param height].
+			</description>
+		</method>
+		<method name="set_log_level" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="level" type="int" />
+			<description>
+				Sets the minimum [enum LogLevel] of JSBSim messages sent to the Godot output; lower ones are dropped. JSBSim errors and fatal errors go to [method @GlobalScope.push_error], warnings to [method @GlobalScope.push_warning], everything else to [method @GlobalScope.print]. Console output JSBSim writes as plain text (see [method set_debug_level]) is always printed. The setting is global for all models and defaults to [constant LOG_WARN].
+			</description>
+		</method>
+		<method name="set_property">
+			<return type="bool" />
+			<param index="0" name="name" type="String" />
+			<param index="1" name="value" type="float" />
+			<description>
+				Sets the JSBSim property [param name] to [param value], in the unit given by the property name. Only existing properties can be set: an unknown name pushes an error and returns [code]false[/code], so a typo does not create a new, unused property. Returns [code]false[/code] and sets [method get_last_error] if JSBSim throws while applying the value.
+			</description>
+		</method>
+		<method name="start_engines">
+			<return type="void" />
+			<description>
+				Starts all engines in the running state (not cranking). Does nothing and pushes an error if no model is loaded.
+			</description>
+		</method>
+		<method name="step">
+			<return type="int" />
+			<param index="0" name="count" type="int" default="1" />
+			<description>
+				Advances the model by [param count] time steps (see [method get_dt]) and returns the number of steps done, which is less than [param count] if JSBSim stops or fails (the reason is in [method get_last_error] if it threw).
+			</description>
+		</method>
+		<method name="trim">
+			<return type="bool" />
+			<param index="0" name="mode" type="int" default="1" />
+			<description>
+				Trims the aircraft for the current initial condition using the JSBSim trim [param mode] (a [enum TrimMode] value). Returns [code]true[/code] on success. Returns [code]false[/code] and sets [method get_last_error] if the trim does not converge or the mode is not valid. Call it after [method run_ic] and [method start_engines].
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="TRIM_LONGITUDINAL" value="0" enum="TrimMode">
+			JSBSim's longitudinal trim: angle of attack, throttle and elevator are adjusted until the vertical, forward and pitch accelerations are zero (wings level, no lateral axes).
+		</constant>
+		<constant name="TRIM_FULL" value="1" enum="TrimMode">
+			JSBSim's full trim: the longitudinal trim plus bank angle, aileron, rudder and sideslip, so all linear and angular accelerations are zero. The default of [method trim] and the mode [JSBSimAircraft] uses at the start.
+		</constant>
+		<constant name="TRIM_GROUND" value="2" enum="TrimMode">
+			JSBSim's ground trim: altitude, pitch and bank are adjusted until the aircraft rests on its landing gear. [JSBSimAircraft] uses it when [member JSBSimAircraft.start_on_ground] is on.
+		</constant>
+		<constant name="TRIM_PULLUP" value="3" enum="TrimMode">
+			JSBSim's pull-up trim: the longitudinal trim at a target load factor (JSBSim's [code]SetTargetNlf()[/code], not exposed by this class). Passed to JSBSim unchanged; the node classes do not use it.
+		</constant>
+		<constant name="TRIM_TURN" value="5" enum="TrimMode">
+			JSBSim's steady turn trim. Passed to JSBSim unchanged; the node classes do not use it.
+		</constant>
+		<constant name="LOG_BULK" value="0" enum="LogLevel">
+			Level of JSBSim's most detailed messages (JSBSim's bulk level). Printed to the Godot output.
+		</constant>
+		<constant name="LOG_DEBUG" value="1" enum="LogLevel">
+			Level of JSBSim's debug messages. Printed to the Godot output.
+		</constant>
+		<constant name="LOG_INFO" value="2" enum="LogLevel">
+			Level of informational messages, for example the files the model loads. Printed to the Godot output.
+		</constant>
+		<constant name="LOG_WARN" value="3" enum="LogLevel">
+			Level of warnings. Pushed with [method @GlobalScope.push_warning]. The default minimum level.
+		</constant>
+		<constant name="LOG_ERROR" value="4" enum="LogLevel">
+			Level of errors. Pushed with [method @GlobalScope.push_error].
+		</constant>
+		<constant name="LOG_FATAL" value="5" enum="LogLevel">
+			Level of fatal errors. Pushed with [method @GlobalScope.push_error].
+		</constant>
+	</constants>
+</class>

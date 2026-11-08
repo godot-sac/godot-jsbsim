@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JSBSimAircraft" inherits="Node3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A JSBSim aircraft in the scene, stepped at a fixed rate and placed on the tangent plane of a geographic origin.
+	</brief_description>
+	<description>
+		Runs a [JSBSimFDM] from [method Node._physics_process] and moves this node to where JSBSim says the aircraft is. The JSBSim model, the simulation rate and the controls are configured with the properties below; the model is loaded and the initial condition applied when the node enters the scene tree at run time (not in the editor), or when you call [method start].
+		[b]Frame.[/b] The node's transform is a local transform in a scene whose origin is a point on the Earth: +X is east, +Y is up, -Z is north, one unit is one metre, and the aircraft looks along -Z with +Y up (the usual Godot node convention). The origin is the node at [member geo_origin_path] (any node with [code]latitude[/code], [code]longitude[/code] and [code]height[/code] properties, for example godot-dis' [code]DisGeoOrigin[/code]) or, if that is empty, [member origin_latitude], [member origin_longitude] and [member origin_height]. Keep the parent of this node at an identity transform. The scene is a flat tangent plane, so start within about 50 km of the origin; a warning is printed beyond that. Geodetic units are degrees and metres above the WGS84 ellipsoid, calibrated airspeed is in knots.
+		[b]Time.[/b] JSBSim steps [member rate] times per second of simulation time, using a time accumulator, so a frame can contain several steps or none. The controls and an optional [JSBSimAutopilot] child are applied before every JSBSim step, so the flight does not depend on the frame rate. Positions and velocities returned by this node are in simulation time; multiply velocities by [member time_scale] for game time.
+		[b]Ground.[/b] The ground the landing gear touches is the node at [member ground_path] (any node with a [code]height_at(x, z)[/code] method returning the ground's scene y, for example godot-geo's [code]GeoTerrain[/code]) or a flat plane at [member ground_level]. The aircraft stops when it crashes ([signal crashed]) or JSBSim's state becomes invalid ([signal failed]); call [method restart] to fly again.
+		[codeblock]
+		var aircraft := JSBSimAircraft.new()
+
+		func _ready():
+			aircraft.aircraft = "J3Cub"
+			aircraft.origin_latitude = 41.0
+			aircraft.origin_longitude = 29.0
+			aircraft.latitude = 41.0
+			aircraft.longitude = 29.0
+			aircraft.height = 800.0   # metres above the ellipsoid
+			aircraft.heading = 90.0   # degrees true
+			aircraft.airspeed = 70.0  # calibrated knots; the aircraft is trimmed for it
+			add_child(aircraft)       # loads the model and starts the simulation
+			aircraft.crashed.connect(func(reason): print(reason))
+
+		func _physics_process(_delta):
+			aircraft.elevator = Input.get_axis("pitch_up", "pitch_down") # +1 is stick forward
+		[/codeblock]
+		Set the properties before the node enters the tree, or call [method start] after changing them. If the aircraft has a [code]DisEntity[/code] child (godot-dis), it gets JSBSim's velocity, acceleration and angular velocity instead of its own estimate, and its appearance is set to destroyed after a crash. Properties of JSBSim's model are reachable through [method get_fdm].
+	</description>
+	<tutorials>
+		<link title="Getting started">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/getting-started.md</link>
+		<link title="Timing and ground contact">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/timing.md</link>
+		<link title="Using other aircraft">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/aircraft.md</link>
+		<link title="Autopilot and routes">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/autopilot.md</link>
+		<link title="Troubleshooting">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/troubleshooting.md</link>
+	</tutorials>
+	<methods>
+		<method name="advance">
+			<return type="int" />
+			<param index="0" name="delta" type="float" />
+			<description>
+				Advances the simulation by [param delta] seconds of game time. [param delta] is multiplied by [member time_scale], added to a time accumulator, and JSBSim is stepped once per [code]1 / rate[/code] seconds of it. Before every step the [JSBSimAutopilot] child (if any) runs and the controls are written to JSBSim; after every step a crash is checked for. The transform and the velocity getters are updated at the end, and a child [code]DisEntity[/code] is updated.
+				Called by [method Node._physics_process] unless [member paused], the aircraft failed or crashed; call it yourself to drive the aircraft manually (it works while [member paused]). At most 2400 steps are done per call; the rest of a longer delta is dropped.
+				Returns the number of JSBSim steps done: 0 if the aircraft failed or crashed, or the accumulated time is less than one step. Pushes an error if [method start] has not succeeded.
+			</description>
+		</method>
+		<method name="get_angular_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Returns the angular velocity of the aircraft relative to the Earth in scene axes, in radians per second and in simulation time (multiply by [member time_scale] for game time). The vector is expressed in the scene frame, not the body frame.
+			</description>
+		</method>
+		<method name="get_autopilot" qualifiers="const">
+			<return type="JSBSimAutopilot" />
+			<description>
+				Returns the [JSBSimAutopilot] child that is currently in the scene tree under this node, or [code]null[/code] if there is none.
+			</description>
+		</method>
+		<method name="get_fdm" qualifiers="const">
+			<return type="JSBSimFDM" />
+			<description>
+				Returns the [JSBSimFDM] this node steps, for reading and writing JSBSim properties (for example [code]get_fdm().get_property("position/h-agl-ft")[/code], in JSBSim's feet). It is the same object for the lifetime of the node and can outlive it.
+				[b]Note:[/b] The pilot commands ([member aileron], [member elevator], [member rudder], [member throttle], [member brake]), the time step and the wind are written to JSBSim again on every step or change, so setting the corresponding JSBSim properties directly has no lasting effect. Loading another model through the [JSBSimFDM] removes this node's ground; use [member aircraft], [member data_dir] and [method start] instead.
+			</description>
+		</method>
+		<method name="get_geodetic_position" qualifiers="const">
+			<return type="PackedFloat64Array" />
+			<description>
+				Returns the current position as a [PackedFloat64Array] [code][latitude, longitude, height][/code]: degrees, degrees and metres above the WGS84 ellipsoid. Returns an empty array if no model is loaded.
+			</description>
+		</method>
+		<method name="get_ground_height" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<param index="1" name="z" type="float" />
+			<description>
+				Returns the height (scene y) of the ground at the scene position ([param x], [param z]), as JSBSim sees it: [code]height_at(x, z)[/code] of the node at [member ground_path] if it is set and returns a finite value, otherwise [member ground_level].
+			</description>
+		</method>
+		<method name="get_ground_normal" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="x" type="float" />
+			<param index="1" name="z" type="float" />
+			<description>
+				Returns the unit normal of the ground at the scene position ([param x], [param z]) in scene axes, as JSBSim sees it. It is the node at [member ground_path]'s [code]normal_at(x, z)[/code] if that method exists and returns a valid upward vector; otherwise it is computed from the slope of [method get_ground_height] sampled 1 m around the point. [code]Vector3(0, 1, 0)[/code] on flat ground.
+			</description>
+		</method>
+		<method name="get_last_step_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of JSBSim steps done by the last [method advance] call (0 if it did none).
+			</description>
+		</method>
+		<method name="get_last_step_time_usec" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the wall-clock time in microseconds the last [method advance] spent on its steps, including the autopilot and control writes. Useful for measuring the cost of an aircraft.
+			</description>
+		</method>
+		<method name="get_linear_acceleration" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Returns the acceleration of the aircraft relative to the Earth in scene axes, in m/s² and in simulation time (multiply by [code]time_scale²[/code] for game time). It includes the rotation term of JSBSim's body-axis acceleration.
+			</description>
+		</method>
+		<method name="get_linear_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Returns the velocity of the aircraft relative to the ground in scene axes (+X east, +Y up, -Z north), in m/s and in simulation time (multiply by [member time_scale] for game time).
+			</description>
+		</method>
+		<method name="is_crashed" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] after a crash was detected (see [member crash_detection]). The aircraft stays stopped until [method restart]. [signal crashed] is emitted once.
+			</description>
+		</method>
+		<method name="is_failed" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] after JSBSim's state became invalid (not finite, or far out of range; typically after a hard ground impact). The aircraft stays stopped until [method restart]. [signal failed] is emitted once.
+			</description>
+		</method>
+		<method name="is_on_ground" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] while any wheel of the landing gear touches the ground. Contact of other structure points (which counts as a crash) does not count. Returns [code]false[/code] if no model is loaded.
+			</description>
+		</method>
+		<method name="is_started" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] after [method start] succeeded. It stays [code]true[/code] after [method is_failed] or [method is_crashed] become [code]true[/code].
+			</description>
+		</method>
+		<method name="restart">
+			<return type="bool" />
+			<description>
+				Returns the aircraft to its initial condition (position, speed, trim, simulation time 0) and clears [method is_crashed] and [method is_failed]. The properties are read again, including the origin, [member ground_path] and the wind. After a crash or failure the model is loaded again (as with [method start]); otherwise the loaded model is kept.
+				Returns [code]false[/code] if the initial condition cannot be applied. Pushes an error if [method start] has not succeeded before.
+			</description>
+		</method>
+		<method name="start">
+			<return type="bool" />
+			<description>
+				Loads the model [member aircraft] from [member data_dir], reads the origin and ground, applies the initial condition and trim, and starts the simulation. Called automatically when the node is ready at run time. Call it again after changing the model or the initial condition properties; [method restart] is enough to apply the other properties.
+				Returns [code]false[/code] if the model does not load (see [method JSBSimFDM.get_last_error]), if [member geo_origin_path] or [member ground_path] does not point to a node, or if the [member ground_path] node has no [code]height_at[/code] method; an error is pushed in each case.
+				With [member trim_on_start] the aircraft is trimmed for level flight at [member airspeed] and the throttle takes the trimmed value; the trimmed elevator, aileron and rudder are moved into JSBSim's trim properties so the sticks ([member elevator], [member aileron], [member rudder]) are centred at 0. A failed trim is reported by [JSBSimFDM] and the aircraft starts untrimmed. The pilot commands [member aileron], [member elevator], [member rudder] and [member brake] are reset to 0. The wind is applied after the trim.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="aileron" type="float" setter="set_aileron" getter="get_aileron" default="0.0">
+			Aileron command, from -1 to 1 (clamped); +1 rolls right. 0 is the trimmed position. Written to JSBSim before every step. A [JSBSimAutopilot] or [JSBSimInput] child overwrites it. Reset to 0 by [method start] and [method restart].
+		</member>
+		<member name="aircraft" type="String" setter="set_aircraft" getter="get_aircraft" default="&quot;J3Cub&quot;">
+			Name of the JSBSim aircraft to load from [member data_dir]. The bundled model is [code]"J3Cub"[/code]. Used by [method start].
+		</member>
+		<member name="airspeed" type="float" setter="set_airspeed" getter="get_airspeed" default="70.0">
+			Initial calibrated airspeed in knots. With [member trim_on_start] the aircraft is trimmed for it. Ignored when [member start_on_ground] is on.
+		</member>
+		<member name="brake" type="float" setter="set_brake" getter="get_brake" default="0.0">
+			Wheel brake command from 0 to 1 (clamped), applied to both main wheels and the centre brake. Reset to 0 by [method start] and [method restart].
+		</member>
+		<member name="crash_detection" type="bool" setter="set_crash_detection" getter="get_crash_detection" default="true">
+			If [code]true[/code], the ground contacts are checked after every JSBSim step and a crash stops the aircraft and emits [signal crashed]. A crash is: contact of a non-wheel structure point with the ground, a wheel touching the ground while sinking faster than [member crash_sink_rate], or the aircraft below the ground. If [code]false[/code], the aircraft keeps being simulated; a violent impact then usually ends in [signal failed].
+		</member>
+		<member name="crash_sink_rate" type="float" setter="set_crash_sink_rate" getter="get_crash_sink_rate" default="4.0">
+			Sink rate in m/s above which a wheel touching the ground counts as a crash (see [member crash_detection]).
+		</member>
+		<member name="data_dir" type="String" setter="set_data_dir" getter="get_data_dir" default="&quot;res://addons/jsbsim/data&quot;">
+			JSBSim data folder to load the model from (a folder with [code]aircraft/[/code] and optionally [code]engine/[/code] and [code]systems/[/code]). A [code]res://[/code] folder inside an exported game is extracted to [code]user://jsbsim/[/code]. See [method JSBSimFDM.load_model].
+		</member>
+		<member name="elevator" type="float" setter="set_elevator" getter="get_elevator" default="0.0">
+			Elevator command, from -1 to 1 (clamped); +1 is stick forward (nose down) and -1 is stick back (nose up). 0 is the trimmed position. Written to JSBSim before every step. A [JSBSimAutopilot] or [JSBSimInput] child overwrites it. Reset to 0 by [method start] and [method restart].
+		</member>
+		<member name="geo_origin_path" type="NodePath" setter="set_geo_origin_path" getter="get_geo_origin_path" default="NodePath(&quot;&quot;)">
+			Path to a node whose [code]latitude[/code] and [code]longitude[/code] (degrees) and [code]height[/code] (metres above the ellipsoid) properties define the origin of the scene frame, for example godot-dis' [code]DisGeoOrigin[/code]. Read by [method start] and [method restart]. If empty, [member origin_latitude], [member origin_longitude] and [member origin_height] are used. [method start] fails if the path does not point to a node.
+		</member>
+		<member name="ground_level" type="float" setter="set_ground_level" getter="get_ground_level" default="0.0">
+			Scene y of the flat ground, in metres. Used where there is no [member ground_path] node or its [code]height_at[/code] returns a value that is not finite.
+		</member>
+		<member name="ground_path" type="NodePath" setter="set_ground_path" getter="get_ground_path" default="NodePath(&quot;&quot;)">
+			Path to a node with a [code]height_at(x, z)[/code] method that returns the ground's scene y at a scene position, for example godot-geo's [code]GeoTerrain[/code]. If the node also has [code]normal_at(x, z)[/code] returning a [Vector3], it is used as the ground normal. Read by [method start] and [method restart]; [method start] fails if the path does not point to a node or the node has no [code]height_at[/code] method. If empty, the ground is the plane at [member ground_level].
+		</member>
+		<member name="heading" type="float" setter="set_heading" getter="get_heading" default="0.0">
+			Initial true heading in degrees (0 is north, 90 is east).
+		</member>
+		<member name="height" type="float" setter="set_height" getter="get_height" default="1500.0">
+			Initial height in metres above the WGS84 ellipsoid (not above the ground or mean sea level). Ignored when [member start_on_ground] is on.
+		</member>
+		<member name="latitude" type="float" setter="set_latitude" getter="get_latitude" default="39.95">
+			Initial geodetic latitude in degrees.
+		</member>
+		<member name="longitude" type="float" setter="set_longitude" getter="get_longitude" default="32.69">
+			Initial longitude in degrees.
+		</member>
+		<member name="origin_height" type="float" setter="set_origin_height" getter="get_origin_height" default="0.0">
+			Height in metres above the WGS84 ellipsoid of the origin of the scene frame, when [member geo_origin_path] is empty.
+		</member>
+		<member name="origin_latitude" type="float" setter="set_origin_latitude" getter="get_origin_latitude" default="39.95">
+			Geodetic latitude in degrees of the origin of the scene frame, when [member geo_origin_path] is empty.
+		</member>
+		<member name="origin_longitude" type="float" setter="set_origin_longitude" getter="get_origin_longitude" default="32.69">
+			Longitude in degrees of the origin of the scene frame, when [member geo_origin_path] is empty.
+		</member>
+		<member name="paused" type="bool" setter="set_paused" getter="is_paused" default="false">
+			If [code]true[/code], [method Node._physics_process] does not step the simulation. [method advance] can still be called directly. Child [code]DisEntity[/code] nodes get zero velocity while paused.
+		</member>
+		<member name="rate" type="float" setter="set_rate" getter="get_rate" default="120.0">
+			Number of JSBSim steps per second of simulation time (the time step is [code]1 / rate[/code] seconds). Must be greater than 0. For a given [member rate] the flight does not depend on the frame rate.
+		</member>
+		<member name="rudder" type="float" setter="set_rudder" getter="get_rudder" default="0.0">
+			Rudder command, from -1 to 1 (clamped); +1 is the right pedal and yaws the nose right. 0 is the trimmed position. It also steers the nose or tail wheel. The node flips the sign for JSBSim, whose own rudder command yaws left when positive. Reset to 0 by [method start] and [method restart].
+		</member>
+		<member name="start_on_ground" type="bool" setter="set_start_on_ground" getter="get_start_on_ground" default="false">
+			If [code]true[/code], the aircraft starts at rest on the ground at [member latitude] and [member longitude] (the ground at that point, see [member ground_path]); [member height] and [member airspeed] are ignored. It starts 1 ft above the ground and is trimmed with [constant JSBSimFDM.TRIM_GROUND] if [member trim_on_start] is on. The throttle is set to 0.
+		</member>
+		<member name="throttle" type="float" setter="set_throttle" getter="get_throttle" default="0.8">
+			Throttle command from 0 to 1 (clamped), applied to all engines. With [member trim_on_start] it is set to the trimmed throttle at the start; with [member start_on_ground] it starts at 0.
+		</member>
+		<member name="time_scale" type="float" setter="set_time_scale" getter="get_time_scale" default="1.0">
+			Simulation seconds per game second. 1 is real time, 0 stops the simulation, larger values fast-forward. Must not be negative. At most 2400 JSBSim steps are done per physics frame, so very high values cannot be reached.
+		</member>
+		<member name="trim_on_start" type="bool" setter="set_trim_on_start" getter="get_trim_on_start" default="true">
+			If [code]true[/code], [method start] and [method restart] trim the aircraft for steady level flight at [member airspeed] ([constant JSBSimFDM.TRIM_FULL]), or on the gear with [member start_on_ground] ([constant JSBSimFDM.TRIM_GROUND]). A model that does not trim starts untrimmed with an error in the output.
+		</member>
+		<member name="turbulence" type="int" setter="set_turbulence" getter="get_turbulence" default="0">
+			Turbulence severity from 0 (none) to 7, using JSBSim's MIL-F-8785C model. 3 is light, 4 moderate, 6 severe. Values are clamped. The gust intensity near the ground follows the wind speed at 20 ft, at least JSBSim's reference for the severity. Applied immediately, and kept by [method restart].
+		</member>
+		<member name="wind_direction" type="float" setter="set_wind_direction" getter="get_wind_direction" default="270.0">
+			Direction in degrees true the wind blows [b]from[/b], as in a weather report (270 is a wind from the west, blowing east). Wrapped to 0..360.
+		</member>
+		<member name="wind_speed" type="float" setter="set_wind_speed" getter="get_wind_speed" default="0.0">
+			Speed in m/s of a steady horizontal wind. Must not be negative. Applied immediately if the model is loaded and kept by [method restart]; at the start it is applied after the trim, so the aircraft meets it as a gust and settles within seconds.
+		</member>
+	</members>
+	<signals>
+		<signal name="crashed">
+			<param index="0" name="reason" type="String" />
+			<description>
+				Emitted once when a crash is detected (see [member crash_detection]); [param reason] says which part touched the ground or how fast the gear touched down, with the simulation time. The aircraft stops moving; the reason is also printed. Call [method restart] to fly again.
+			</description>
+		</signal>
+		<signal name="failed">
+			<param index="0" name="reason" type="String" />
+			<description>
+				Emitted once when JSBSim's state became invalid (not finite or far out of range, typically after a hard ground impact); [param reason] has the simulation time. A warning is also pushed. The aircraft stops moving; call [method restart] to fly again.
+			</description>
+		</signal>
+	</signals>
+</class>

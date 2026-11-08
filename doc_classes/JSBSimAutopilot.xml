@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JSBSimAutopilot" inherits="Node" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		An autopilot for a [JSBSimAircraft]: heading, altitude and airspeed holds and waypoint routes.
+	</brief_description>
+	<description>
+		Add it as a child of a [JSBSimAircraft]; it works with any JSBSim model and needs nothing in the aircraft's XML. The aircraft calls it before every JSBSim step (at [member JSBSimAircraft.rate], independent of the frame rate) and the autopilot writes the aircraft's pilot commands [member JSBSimAircraft.aileron], [member JSBSimAircraft.elevator] and [member JSBSimAircraft.rudder], and [member JSBSimAircraft.throttle] if [member speed_hold] is on. If the parent is not a [JSBSimAircraft] a warning is printed and the node does nothing.
+		While [member enabled] is [code]true[/code] the autopilot always flies the stick and pedals, so manual input to those commands is overwritten. Without any mode it keeps the wings level and flies [member target_vertical_speed]. The modes add to that: [member heading_hold] turns to [member target_heading], [member follow_route] flies the waypoints, [member altitude_hold] climbs or descends to [member target_altitude] and [member speed_hold] holds [member target_speed] with the throttle. Without [member speed_hold] the throttle stays with the pilot.
+		The loops are cascaded PID controllers on JSBSim's own state: heading or route track to bank to aileron, sideslip to rudder, height to vertical speed to pitch to elevator, and airspeed to throttle. A loop that was off starts from the current command, so switching on does not jump. The defaults suit the bundled J3Cub; the properties in the [b]Tuning[/b] group are for other aircraft.
+		Units: angles in degrees, heights in metres above the WGS84 ellipsoid (like [member JSBSimAircraft.height]), distances in metres, airspeeds in calibrated knots, vertical speeds in m/s.
+		[codeblock]
+		var autopilot := JSBSimAutopilot.new()
+		aircraft.add_child(autopilot)                          # aircraft: a JSBSimAircraft
+		autopilot.add_waypoint(41.05, 29.10, 900.0, 70.0)      # latitude, longitude, height (m), speed (kt)
+		autopilot.add_waypoint(41.10, 29.20)                   # keeps the current height and speed targets
+		autopilot.add_waypoint_local(Vector3(2000.0, 900.0, -3000.0)) # a scene position; y is the height
+		autopilot.loop_route = true
+		autopilot.altitude_hold = true
+		autopilot.speed_hold = true
+		autopilot.follow_route = true
+		autopilot.enabled = true
+		autopilot.waypoint_reached.connect(func(index): print("reached ", index))
+		[/codeblock]
+		[method engage] turns the autopilot on holding the current heading, height and airspeed.
+	</description>
+	<tutorials>
+		<link title="Autopilot and routes">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/autopilot.md</link>
+		<link title="Getting started">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/getting-started.md</link>
+		<link title="Keyboard, gamepad and flight stick">https://github.com/godot-sac/godot-jsbsim/blob/main/docs/input.md</link>
+	</tutorials>
+	<methods>
+		<method name="add_waypoint">
+			<return type="void" />
+			<param index="0" name="latitude" type="float" />
+			<param index="1" name="longitude" type="float" />
+			<param index="2" name="height" type="float" default="nan" />
+			<param index="3" name="speed" type="float" default="nan" />
+			<description>
+				Appends a waypoint to the route. [param latitude] and [param longitude] are geodetic degrees. [param height] is metres above the WGS84 ellipsoid and [param speed] is calibrated knots; if either is [code]NAN[/code] (the default) the corresponding target ([member target_altitude], [member target_speed]) is not changed when the waypoint becomes active. A waypoint with a height or speed sets the target when it becomes the active one; it takes effect while [member altitude_hold] or [member speed_hold] is on.
+				The first waypoint added to an empty route becomes active immediately. Adding waypoints does not turn on [member follow_route] or [member enabled]. A latitude or longitude that is not finite, or a latitude beyond 90 degrees, pushes an error and the waypoint is not added.
+			</description>
+		</method>
+		<method name="add_waypoint_local">
+			<return type="void" />
+			<param index="0" name="position" type="Vector3" />
+			<param index="1" name="speed" type="float" default="nan" />
+			<description>
+				Appends a waypoint at the scene position [param position] of the parent aircraft's frame (+X east, +Y up, -Z north, metres); its y is the waypoint's height. [param speed] is as in [method add_waypoint]. The position is converted to latitude, longitude and ellipsoid height. Pushes an error and adds nothing if the parent aircraft has not started ([method JSBSimAircraft.start]), since the frame is not known before.
+			</description>
+		</method>
+		<method name="clear_route">
+			<return type="void" />
+			<description>
+				Removes all waypoints. There is no active waypoint afterwards ([method get_active_waypoint] returns -1). [member follow_route] is not changed; with an empty route the autopilot falls back to [member heading_hold] or wings level.
+			</description>
+		</method>
+		<method name="engage">
+			<return type="void" />
+			<description>
+				Turns the autopilot on holding the current state: [member target_heading], [member target_altitude] and [member target_speed] are set to the aircraft's present true heading, ellipsoid height and calibrated airspeed, and [member heading_hold], [member altitude_hold], [member speed_hold] and [member enabled] are set. [member follow_route] is not changed. Pushes an error if the parent aircraft has not started.
+			</description>
+		</method>
+		<method name="get_active_waypoint" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the index of the waypoint being flown to, or -1 if there is no route or the end of a route without [member loop_route] was passed.
+			</description>
+		</method>
+		<method name="get_commanded_bank" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the bank angle in degrees the autopilot last commanded (positive is right bank), limited to [member max_bank]. Updated while [member enabled].
+			</description>
+		</method>
+		<method name="get_commanded_pitch" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the pitch angle in degrees the autopilot last commanded, limited to [member min_pitch] and [member max_pitch]. Updated while [member enabled].
+			</description>
+		</method>
+		<method name="get_commanded_vertical_speed" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the vertical speed in m/s (positive is up) the autopilot last commanded, after the climb and descent limits and the airspeed protection. Updated while [member enabled].
+			</description>
+		</method>
+		<method name="get_cross_track_error" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the distance in metres of the aircraft from the active leg, positive to the right of the leg. Valid while [member follow_route] flies a route.
+			</description>
+		</method>
+		<method name="get_desired_track" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the ground track in degrees true (0..360) the autopilot is steering for on the active leg, including the correction toward the leg. Valid while [member follow_route] flies a route.
+			</description>
+		</method>
+		<method name="get_distance_to_waypoint" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the horizontal distance in metres to the active waypoint. Valid while [member follow_route] flies a route.
+			</description>
+		</method>
+		<method name="get_waypoint" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns waypoint [param index] as a [Dictionary] with the keys [code]latitude[/code] and [code]longitude[/code] (degrees), [code]height[/code] (metres, [code]NAN[/code] if the waypoint has none), [code]speed[/code] (knots, [code]NAN[/code] if none) and, if the parent aircraft has started, [code]position[/code] (a [Vector3] in the aircraft's scene frame; a waypoint without a height is placed at the height of the frame's origin). Returns an empty dictionary and pushes an error if [param index] is out of range.
+			</description>
+		</method>
+		<method name="get_waypoint_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of waypoints in the route.
+			</description>
+		</method>
+		<method name="set_active_waypoint">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Makes waypoint [param index] the one flown to, on a leg that starts at the aircraft's position at the next update, and applies its height and speed targets. Use it to skip ahead or to restart a route that has finished (also set [member follow_route] again in that case). Pushes an error if [param index] is out of range.
+			</description>
+		</method>
+		<method name="update">
+			<return type="void" />
+			<param index="0" name="dt" type="float" />
+			<description>
+				Computes the commands for one JSBSim step of [param dt] seconds and writes them to the parent aircraft. Does nothing unless [member enabled]. [JSBSimAircraft] calls it before every step; you normally do not need to.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="altitude_gain" type="float" setter="set_altitude_gain" getter="get_altitude_gain" default="0.15">
+			Gain of the height loop: commanded climb in m/s per metre of height error (before the limits [member max_climb_rate] and [member max_descent_rate]).
+		</member>
+		<member name="altitude_hold" type="bool" setter="set_altitude_hold" getter="get_altitude_hold" default="false">
+			If [code]true[/code], the autopilot climbs or descends to [member target_altitude]. If [code]false[/code] it flies [member target_vertical_speed].
+		</member>
+		<member name="capture_radius" type="float" setter="set_capture_radius" getter="get_capture_radius" default="150.0">
+			Distance in metres from a waypoint at which it counts as reached. A waypoint is also reached earlier, when a turn to the next leg has to start (turn anticipation), or when the aircraft passes the end of the leg.
+		</member>
+		<member name="enabled" type="bool" setter="set_enabled" getter="get_enabled" default="false">
+			Master switch. If [code]true[/code] the autopilot writes the aileron, elevator and rudder commands of the aircraft before every step (and the throttle if [member speed_hold] is on). With no other mode it keeps the wings level and flies [member target_vertical_speed]. If [code]false[/code] it writes nothing. The loops start from the current commands when this is turned on.
+		</member>
+		<member name="follow_route" type="bool" setter="set_follow_route" getter="get_follow_route" default="false">
+			If [code]true[/code] and [member enabled], the autopilot flies the route instead of [member target_heading]: it follows the ground track of each leg (so a crosswind is corrected) and returns to the leg at up to [member max_intercept] degrees. When the last waypoint of a route without [member loop_route] is reached, [signal route_finished] is emitted, this property is set to [code]false[/code], [member heading_hold] is set to [code]true[/code] and [member target_heading] to the course of the last leg. Without an active waypoint the autopilot uses [member heading_hold].
+		</member>
+		<member name="heading_gain" type="float" setter="set_heading_gain" getter="get_heading_gain" default="1.0">
+			Gain of the heading loop: degrees of commanded bank per degree of heading error.
+		</member>
+		<member name="heading_hold" type="bool" setter="set_heading_hold" getter="get_heading_hold" default="false">
+			If [code]true[/code], the autopilot turns to [member target_heading] (bank limited to [member max_bank]). Used when no route is flown; [member follow_route] takes precedence while a route is active.
+		</member>
+		<member name="loop_route" type="bool" setter="set_loop_route" getter="get_loop_route" default="false">
+			If [code]true[/code], the route continues with the first waypoint after the last one. A loop needs at least two waypoints; a single waypoint is reached once.
+		</member>
+		<member name="max_bank" type="float" setter="set_max_bank" getter="get_max_bank" default="25.0">
+			Limit of the commanded bank angle in degrees. Turn anticipation also assumes 80 % of it.
+		</member>
+		<member name="max_climb_rate" type="float" setter="set_max_climb_rate" getter="get_max_climb_rate" default="3.0">
+			Limit of the commanded climb rate in m/s. Set it to what the aircraft can climb at full power.
+		</member>
+		<member name="max_descent_rate" type="float" setter="set_max_descent_rate" getter="get_max_descent_rate" default="4.0">
+			Limit of the commanded descent rate in m/s, as a positive number.
+		</member>
+		<member name="max_intercept" type="float" setter="set_max_intercept" getter="get_max_intercept" default="45.0">
+			Maximum angle in degrees between the commanded track and the leg while returning to the leg.
+		</member>
+		<member name="max_pitch" type="float" setter="set_max_pitch" getter="get_max_pitch" default="15.0">
+			Upper limit of the commanded pitch angle in degrees.
+		</member>
+		<member name="max_throttle" type="float" setter="set_max_throttle" getter="get_max_throttle" default="1.0">
+			Upper limit of the throttle set by [member speed_hold].
+		</member>
+		<member name="min_airspeed" type="float" setter="set_min_airspeed" getter="get_min_airspeed" default="45.0">
+			Calibrated airspeed in knots below which the autopilot gives up height to regain speed. The climb command is reduced from 10 kt above this speed, and below it a descent proportional to the deficit is commanded. Set it a little above the aircraft's stall speed.
+		</member>
+		<member name="min_pitch" type="float" setter="set_min_pitch" getter="get_min_pitch" default="-10.0">
+			Lower limit of the commanded pitch angle in degrees (a negative number).
+		</member>
+		<member name="min_throttle" type="float" setter="set_min_throttle" getter="get_min_throttle" default="0.0">
+			Lower limit of the throttle set by [member speed_hold].
+		</member>
+		<member name="pitch_kd" type="float" setter="set_pitch_kd" getter="get_pitch_kd" default="0.015">
+			Damping of the pitch loop: elevator per degree per second of pitch rate.
+		</member>
+		<member name="pitch_ki" type="float" setter="set_pitch_ki" getter="get_pitch_ki" default="0.04">
+			Integral gain of the pitch loop: elevator per degree of pitch error per second. The integral is limited.
+		</member>
+		<member name="pitch_kp" type="float" setter="set_pitch_kp" getter="get_pitch_kp" default="0.04">
+			Proportional gain of the pitch loop: elevator command per degree of pitch error.
+		</member>
+		<member name="roll_kd" type="float" setter="set_roll_kd" getter="get_roll_kd" default="0.01">
+			Damping of the roll loop: aileron per degree per second of roll rate.
+		</member>
+		<member name="roll_ki" type="float" setter="set_roll_ki" getter="get_roll_ki" default="0.01">
+			Integral gain of the roll loop: aileron per degree of bank error per second. The integral is limited.
+		</member>
+		<member name="roll_kp" type="float" setter="set_roll_kp" getter="get_roll_kp" default="0.03">
+			Proportional gain of the roll loop: aileron command per degree of bank error.
+		</member>
+		<member name="speed_hold" type="bool" setter="set_speed_hold" getter="get_speed_hold" default="false">
+			If [code]true[/code], the autopilot sets the throttle to hold [member target_speed], between [member min_throttle] and [member max_throttle]. If [code]false[/code] the throttle is left to the pilot.
+		</member>
+		<member name="speed_ki" type="float" setter="set_speed_ki" getter="get_speed_ki" default="0.02">
+			Integral gain of the speed loop: throttle per knot of airspeed error per second. The integral is limited by the throttle limits.
+		</member>
+		<member name="speed_kp" type="float" setter="set_speed_kp" getter="get_speed_kp" default="0.05">
+			Proportional gain of the speed loop: throttle per knot of airspeed error.
+		</member>
+		<member name="target_altitude" type="float" setter="set_target_altitude" getter="get_target_altitude" default="1500.0">
+			Height in metres above the WGS84 ellipsoid held while [member altitude_hold] is on. Waypoints with a height set it when they become active.
+		</member>
+		<member name="target_heading" type="float" setter="set_target_heading" getter="get_target_heading" default="0.0">
+			True heading in degrees held while [member heading_hold] is on and no route is flown.
+		</member>
+		<member name="target_speed" type="float" setter="set_target_speed" getter="get_target_speed" default="70.0">
+			Calibrated airspeed in knots held while [member speed_hold] is on. Waypoints with a speed set it when they become active.
+		</member>
+		<member name="target_vertical_speed" type="float" setter="set_target_vertical_speed" getter="get_target_vertical_speed" default="0.0">
+			Vertical speed in m/s (positive is up) flown while [member altitude_hold] is off, subject to the climb and descent limits.
+		</member>
+		<member name="track_gain" type="float" setter="set_track_gain" getter="get_track_gain" default="1.5">
+			Gain of the route loop: degrees of commanded bank per degree of ground track error.
+		</member>
+		<member name="track_lookahead" type="float" setter="set_track_lookahead" getter="get_track_lookahead" default="400.0">
+			Distance in metres ahead on the leg the aircraft steers toward when returning to it. A larger value returns to the leg more gently; about ten seconds of ground speed is a good start.
+		</member>
+		<member name="vertical_speed_ki" type="float" setter="set_vertical_speed_ki" getter="get_vertical_speed_ki" default="0.4">
+			Integral gain of the vertical speed loop: degrees of pitch per m/s of vertical speed error per second.
+		</member>
+		<member name="vertical_speed_kp" type="float" setter="set_vertical_speed_kp" getter="get_vertical_speed_kp" default="1.0">
+			Gain of the vertical speed loop: degrees of commanded pitch per m/s of vertical speed error.
+		</member>
+		<member name="yaw_kp" type="float" setter="set_yaw_kp" getter="get_yaw_kp" default="0.05">
+			Gain of the turn coordination: rudder command per degree of sideslip (positive sideslip gives right pedal). The rudder is always driven while [member enabled].
+		</member>
+	</members>
+	<signals>
+		<signal name="route_finished">
+			<description>
+				Emitted after the last waypoint of a route without [member loop_route] was reached (and after its [signal waypoint_reached]). The autopilot then keeps the last leg's course with [member heading_hold]. A route of a single waypoint also finishes, even with [member loop_route].
+			</description>
+		</signal>
+		<signal name="waypoint_reached">
+			<param index="0" name="index" type="int" />
+			<description>
+				Emitted when waypoint [param index] counts as reached: within [member capture_radius] or the turn anticipation distance, or past the end of the leg. The autopilot then continues with the next waypoint (the first one after the last, with [member loop_route]).
+			</description>
+		</signal>
+	</signals>
+</class>

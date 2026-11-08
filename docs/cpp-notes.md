@@ -173,3 +173,15 @@ mekanik tekrar için kullan.
 `advance()` kendi süresini ölçüyor: `steady_clock::now()` farkı `duration<double, std::micro>` ile mikrosaniyeye
 çevriliyor. `steady_clock` hiç geri gitmeyen saattir (sistem saati değişse de); süre ölçmek için doğru seçim
 (`system_clock` takvim saatidir).
+
+## Editörde sınıf belgesi (F1): `doc_classes/` (v0.2, 2026-11-08)
+`doc_classes/*.xml` (Godot'nun kendi sınıf belgeleriyle aynı biçim) `SConstruct`'taki küçük bir fonksiyonla zlib'le
+sıkıştırılıp `build/gen/class_reference.gen.cpp` içine bayt dizisi olarak yazılıyor; yalnızca debug kütüphanesinde
+(`CLASS_REFERENCE` tanımı). `src/class_reference.cpp` diziyi açıp editöre veriyor. İsim alanı düzeyindeki `const`
+değişkenler yalnızca kendi `.cpp` dosyasında görünür; başlıktaki `extern` bildirimleri onları dışarıya açıyor.
+godot-cpp'nin hazır `GodotCPPDocData`'sı kullanılmadı: belgeleri her zaman yüklüyor ve o zaman yeni projenin ilk
+başsız `--import`'u yine çöküyordu (godotengine/godot#111048); elle yükleyince `install_editor_first_load_guard()`
+koruma devredeyken belgeler atlanıyor. Ayrıntılı (İngilizce) not godot-dis `docs/cpp-notes.md`'de. API değişince:
+`<godot> --headless --path . --doctool . --gdextension-docs` (kardeş bağlantılı godot-dis'in `Dis*.xml`'lerini sil),
+sonra `python tools/check_docs.py`.
+

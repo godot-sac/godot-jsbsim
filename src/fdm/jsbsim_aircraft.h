@@ -30,8 +30,8 @@ public:
 	// Loads the model and applies the initial condition. Called from _ready() at run time; call it again after
 	// changing aircraft or data_dir. Returns false (see get_fdm().get_last_error()) on failure.
 	bool start();
-	// Back to the initial condition (position, speed, trim). Keeps the loaded model, except after is_failed(), when
-	// the model is loaded again.
+	// Back to the initial condition (position, speed, trim). Keeps the loaded model, except after is_failed() or
+	// is_crashed(), when the model is loaded again.
 	bool restart();
 	bool is_started() const { return started; }
 	// True after the JSBSim state became invalid (not finite or far out of range, typically after hitting the

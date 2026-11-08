@@ -4,6 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "class_reference.h"
 #include "editor_first_load_guard.h"
 #include "fdm/jsbsim_aircraft.h"
 #include "fdm/jsbsim_autopilot.h"
@@ -13,7 +14,10 @@ using namespace godot;
 
 void initialize_godot_jsbsim(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		install_editor_first_load_guard();
+		// Skipped when the guard is needed: the editor would crash at exit generating docs for it.
+		if (!install_editor_first_load_guard()) {
+			load_class_reference();
+		}
 		return;
 	}
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
