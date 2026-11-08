@@ -23,13 +23,17 @@ next to `COPYING.JSBSim`:
   JSBSim source tree.
 
 ### JSBSim aircraft data
-`addons/jsbsim/data/` — **not covered by this project's MIT license.** Copied unmodified from JSBSim 1.3.3 by
-`tools/bundle_aircraft.py`; part of the JSBSim distribution, distributed under its **LGPL-2.1** (`COPYING.JSBSim`).
+`addons/jsbsim/data/` — **not covered by this project's MIT license.** Copied by `tools/bundle_aircraft.py`, unmodified
+from JSBSim 1.3.3 or generated with its AeromatiC++; part of the JSBSim distribution, distributed under its **LGPL-2.1** (`COPYING.JSBSim`).
 The files name no licence of their own and JSBSim has not stated whether its repository licence covers such files
 (JSBSim discussion #1531); `addons/jsbsim/data/LICENSE.md` and a `NOTICE.md` per model record the origin from
 JSBSim's git history.
 - `J3Cub` — Piper J-3 Cub, Erik Hofman using Aeromatic 3.2.0 (2015), added to JSBSim directly (`bd676b7f`); no GPL
   notice, no "not to be sold" note and no FlightGear sync in its history. Not endorsed by the manufacturer.
+
+- `TUAV` — generic tactical UAV made for godot-jsbsim: generated with JSBSim's AeromatiC++ 3.3.21 (LGPL-2.1) from
+  our inputs (`aircraft/TUAV/aeromatic.param`). Most of the files are AeromatiC++'s templates, so they are
+  distributed under the LGPL-2.1 like JSBSim's own aircraft, not under MIT.
 
 Not distributed: JSBSim's `pc7` (used by the tests from the submodule only); see docs/licensing.md.
 

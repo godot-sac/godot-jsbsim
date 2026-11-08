@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Versions follow [semver
 - Class reference in the editor: F1 on `JSBSimFDM`, `JSBSimAircraft` and `JSBSimAutopilot` shows their
   description, methods, properties, signals and constants (`doc_classes/`, built into the debug library).
   `tools/check_docs.py` and a CI step keep it complete and in step with the API.
+- Second bundled aircraft `TUAV`: a generic small tactical UAV generated with JSBSim's AeromatiC++ from our inputs
+  (`aircraft/TUAV/`, LGPL-2.1 like the other aircraft data); trims 55–90 kt and flies `JSBSimAutopilot` routes
+  with the default gains (`tests/unit/test_tuav.gd`). DIS type `[1, 2, 0, 50, 0, 0, 0]` (unmanned) in
+  `JSBSimDisTypes`. `tools/bundle_aircraft.py` bundles our own models next to JSBSim's.
 
 ## [0.1.0] - 2026-11-08
 First release.

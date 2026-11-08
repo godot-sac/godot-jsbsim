@@ -1,0 +1,44 @@
+.
+y
+y
+TUAV
+y
+0
+0                             ; Type of aircraft
+45                            ; Stall speed VS1 (clean, no flaps)
+300                           ; Maximum takeoff weight
+190                           ; Empty weight
+                              ; Inertia Ixx
+                              ; Inertia Iyy
+                              ; Inertia Izz
+11.5                          ; Length
+0                             ; Select a wing shape
+16                            ; Wing span
+28                            ; Wing area
+9.14                          ; Wing aspect ratio
+0.8                           ; Wing taper ratio
+                              ; Wing root chord
+2                             ; Wing incidence
+2                             ; Wing dihedral
+0                             ; Wing sweep (quarter chord)
+                              ; Htail area
+                              ; Htail arm
+                              ; Vtail area
+                              ; Vtail arm
+y
+TUAV-engine
+1                             ; Number of engines
+2                             ; Engine layout
+0                             ; Engine type
+32                            ; Engine power
+7500                          ; Maximum engine rpm
+TUAV-prop
+2.3                           ; Propeller diameter
+y
+y
+n
+0                             ; Nose or tail wheel type
+n
+n
+n
+n

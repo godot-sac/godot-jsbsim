@@ -18,8 +18,6 @@ Done and tested on Godot 4.7.2, Windows and Linux (see [docs/compatibility.md](d
 Not tried yet: macOS (CI builds it, nobody has run it), Godot 4.3–4.6, the CI workflow itself.
 
 ## Next (0.2 candidates)
-- A second bundled aircraft with a clean licence: our own model generated with AeromatiC++ from open data (for
-  example a small UAV or a jet trainer), MIT or CC0.
 - macOS checked on real hardware (`@rpath` / `@loader_path`, universal binary).
 - Older Godot versions (4.3–4.6) tried and listed in the compatibility table.
 - Interpolation between JSBSim states for drawing at frame rates far above the simulation rate.

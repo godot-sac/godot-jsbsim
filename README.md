@@ -35,8 +35,9 @@ Done:
 - `JSBSimInput`: keyboard, gamepad and flight stick (HOTAS) input through InputMap actions: `GAMEPAD` and
   `FLIGHT_STICK` profiles, absolute throttle lever, pitch trim, autopilot toggle; your own Input Map entries win
   ([docs/input.md](docs/input.md))
-- Bundled aircraft: `J3Cub` (Piper J-3 Cub), unmodified JSBSim data under JSBSim's LGPL-2.1, not MIT (see
-  `addons/jsbsim/data/LICENSE.md`); other JSBSim models load from your own data folder
+- Bundled aircraft, JSBSim data under JSBSim's LGPL-2.1, not MIT (see `addons/jsbsim/data/LICENSE.md`): `J3Cub`
+  (Piper J-3 Cub, unmodified from JSBSim) and `TUAV`, a generic small tactical UAV made for this add-on with JSBSim's
+  AeromatiC++ (`aircraft/TUAV/`); other JSBSim models load from your own data folder
 - Trajectories match the official JSBSim Python package bit for bit (60 s scenarios with trim and control inputs)
 
 Not yet: a published release with prebuilt libraries (CI builds the package; see [docs/release.md](docs/release.md)).
