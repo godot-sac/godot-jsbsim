@@ -20,7 +20,8 @@ Notes:
 - **Bit-for-bit results:** the J3Cub oracle scenarios match the official `jsbsim` Python package exactly on both
   tested platforms, and the getting-started route prints the same numbers on Windows and Linux.
 - **Exported games:** the data extraction from a `.pck` is tested with `PCKPacker` + `load_resource_pack`
-  (`tests/unit/test_data.gd`); a real export with Godot's export templates has not been tried yet.
+  (`tests/unit/test_data.gd`), and a real export with Godot 4.7.2 release templates flies on Windows and Linux
+  (2026-11-09, release zip 0.1.0, in godot-sim-demo; see godot-sim-demo's [export guide](https://github.com/godot-sac/godot-sim-demo/blob/main/docs/export.md)). Add `*.xml` to the export's include filter.
 - **Linux libraries** of the release are built on Ubuntu 22.04 (CI), so they should run on glibc 2.35 or newer;
   older systems are not tried. A zip built locally on a newer distribution needs that distribution's glibc (the
 local test zips came from Ubuntu 24.04 and need glibc 2.38): publish the CI zip, not a local one.
