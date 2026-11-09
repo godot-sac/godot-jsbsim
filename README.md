@@ -4,7 +4,7 @@
 in step with Godot's physics, and place them on the WGS84 globe in the same local frame as godot-dis and godot-geo.
 A C++ GDExtension; JSBSim (LGPL-2.1) is linked **dynamically** as a separate, replaceable shared library.
 
-**Status:** 0.1.0, the first release. Tested with Godot 4.7.2 on Windows and Linux; plans in [ROADMAP.md](ROADMAP.md).
+**Status:** 0.2.0. Tested with Godot 4.7.2 on Windows and Linux; plans in [ROADMAP.md](ROADMAP.md).
 Part of [Godot SAC](https://github.com/godot-sac): stand-alone add-ons for terrain, military symbology, DIS and flight dynamics that also work together.
 
 ![The J3Cub over the Bosphorus in Istanbul on godot-geo terrain (Copernicus DEM, Sentinel-2, OpenStreetMap buildings)](docs/images/terrain_flight.jpg)

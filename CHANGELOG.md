@@ -3,6 +3,8 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-11-09
 ### Added
 - Class reference in the editor: F1 on `JSBSimFDM`, `JSBSimAircraft` and `JSBSimAutopilot` shows their
   description, methods, properties, signals and constants (`doc_classes/`, built into the debug library).

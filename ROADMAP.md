@@ -3,7 +3,7 @@
 Where godot-jsbsim stands and what may come next. Nothing here is a promise; issues and pull requests that move an
 item forward are welcome (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
-## Status: 0.1.0 (first release)
+## Status: 0.2.0
 Done and tested on Godot 4.7.2, Windows and Linux (see [docs/compatibility.md](docs/compatibility.md)):
 - JSBSim 1.3.3 as a separate shared library (LGPL-2.1), loaded dynamically; JSBSim errors never crash Godot.
 - `JSBSimFDM` (model loading, initial conditions with ellipsoid heights, trim, stepping, properties) and the
@@ -13,13 +13,14 @@ Done and tested on Godot 4.7.2, Windows and Linux (see [docs/compatibility.md](d
 - `JSBSimInput`: keyboard, gamepad and flight stick profiles.
 - DIS output through a godot-dis `DisEntity` child (no build dependency).
 - Many aircraft at once (about 7 µs per aircraft step, measured in [docs/performance.md](docs/performance.md)).
-- One bundled aircraft, the J3Cub, with its provenance recorded.
+- Two bundled aircraft: JSBSim's J3Cub, with its provenance recorded, and `TUAV`, our own generic tactical UAV
+  made with AeromatiC++.
+- Class reference in the editor (F1).
 
-Not tried yet: macOS (CI builds it, nobody has run it), Godot 4.3–4.6, the CI workflow itself.
+Not tried yet: macOS.
 
-## Next (0.2 candidates)
+## Next (candidates)
 - macOS checked on real hardware (`@rpath` / `@loader_path`, universal binary).
-- Older Godot versions (4.3–4.6) tried and listed in the compatibility table.
 - Interpolation between JSBSim states for drawing at frame rates far above the simulation rate.
 - Gust inputs (JSBSim's cosine gust) exposed on `JSBSimAircraft` (today through `get_fdm().set_property()`).
 - More controls and state on the node instead of raw properties: flaps, gear, mixture, per-engine throttle, initial
