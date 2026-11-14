@@ -23,8 +23,7 @@ Not tried yet: macOS.
 - macOS checked on real hardware (`@rpath` / `@loader_path`, universal binary).
 - Interpolation between JSBSim states for drawing at frame rates far above the simulation rate.
 - Gust inputs (JSBSim's cosine gust) exposed on `JSBSimAircraft` (today through `get_fdm().set_property()`).
-- More controls and state on the node instead of raw properties: flaps, gear, mixture, per-engine throttle, initial
-  pitch / roll / climb rate, alpha / beta getters, fuel and mass, repositioning without `restart()`.
+- More initial condition on the node: pitch, roll and climb rate; repositioning without `restart()`.
 
 ## Later
 - JSBSim scripts (`<runscript>`) run from Godot.

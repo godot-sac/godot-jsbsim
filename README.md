@@ -20,8 +20,9 @@ Done:
 - Works in exported games: the XML data is extracted from the `.pck` to `user://` on first use
 - `JSBSimAircraft` node: steps JSBSim at a fixed rate (120 Hz) from `_physics_process`, places the aircraft in the
   local frame of a geographic origin (+X east, +Y up, −Z north, metres; the same frame as godot-dis `DisGeoOrigin`),
-  trims on start, takes stick / pedal / throttle / brake commands, time scale and pause; the controls act at every
-  JSBSim step, so a flight is the same at any frame rate ([docs/timing.md](docs/timing.md))
+  trims on start, takes stick / pedal / throttle / brake / flaps / gear / mixture commands and per-engine throttles,
+  reports angle of attack, sideslip, calibrated airspeed, mass and fuel, time scale and pause; the controls act at
+  every JSBSim step, so a flight is the same at any frame rate ([docs/timing.md](docs/timing.md))
 - Wind (`wind_speed`, `wind_direction`) and MIL-F-8785C turbulence (`turbulence` 0–7) on `JSBSimAircraft`
 - 10–100 aircraft at once: about 7 µs per aircraft step, 50 aircraft at 120 Hz use 4 % of one core
   ([docs/performance.md](docs/performance.md), `demo/many_aircraft.tscn`)

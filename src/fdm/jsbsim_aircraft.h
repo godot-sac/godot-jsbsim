@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/core/object_id.hpp>
 #include <godot_cpp/variant/node_path.hpp>
@@ -134,6 +136,24 @@ public:
 	double get_throttle() const { return throttle; }
 	void set_brake(double value);
 	double get_brake() const { return brake; }
+	void set_flaps(double value);
+	double get_flaps() const { return flaps; }
+	void set_gear_down(bool value) { gear_down = value; }
+	bool get_gear_down() const { return gear_down; }
+	void set_mixture(double value);
+	double get_mixture() const { return mixture; }
+	// Per-engine throttle: overrides `throttle` for one engine until `throttle` is set again.
+	int get_engine_count() const;
+	void set_engine_throttle(int engine, double value);
+	double get_engine_throttle(int engine) const;
+
+	// Flight state read from JSBSim (0 before the start): angle of attack and sideslip in degrees, calibrated
+	// airspeed in knots, mass and fuel in kilograms.
+	double get_alpha() const;
+	double get_beta() const;
+	double get_calibrated_airspeed() const;
+	double get_mass() const;
+	double get_fuel() const;
 
 	void _ready() override;
 	void _physics_process(double delta) override;
@@ -195,6 +215,11 @@ private:
 	double throttle = 0.8;
 	double start_throttle = 0.8; // throttle when start() was called: restart() begins with it again
 	double brake = 0.0; // 0..1, both main wheels
+	// Configuration commands: kept across start() / restart() and applied before the trim.
+	double flaps = 0.0; // 0..1 of full flap travel
+	bool gear_down = true; // retractable gear only; fixed gear ignores it
+	double mixture = 1.0; // 0..1, all engines (piston engines)
+	std::vector<double> engine_throttles; // NaN: follow `throttle`
 
 	godot::Ref<JSBSimFDM> fdm;
 	JSBSimAutopilot *autopilot = nullptr;

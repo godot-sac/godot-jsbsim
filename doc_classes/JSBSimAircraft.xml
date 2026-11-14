@@ -45,6 +45,12 @@
 				Returns the number of JSBSim steps done: 0 if the aircraft failed or crashed, or the accumulated time is less than one step. Pushes an error if [method start] has not succeeded.
 			</description>
 		</method>
+		<method name="get_alpha" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the angle of attack in degrees (JSBSim [code]aero/alpha-deg[/code]); 0 before the start.
+			</description>
+		</method>
 		<method name="get_angular_velocity" qualifiers="const">
 			<return type="Vector3" />
 			<description>
@@ -57,11 +63,42 @@
 				Returns the [JSBSimAutopilot] child that is currently in the scene tree under this node, or [code]null[/code] if there is none.
 			</description>
 		</method>
+		<method name="get_beta" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the sideslip angle in degrees (JSBSim [code]aero/beta-deg[/code]), positive with the wind from the right; 0 before the start.
+			</description>
+		</method>
+		<method name="get_calibrated_airspeed" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the calibrated airspeed in knots (JSBSim [code]velocities/vc-kts[/code]), the speed [member airspeed] and [member JSBSimAutopilot.target_speed] use; 0 before the start.
+			</description>
+		</method>
+		<method name="get_engine_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of engines of the loaded model; 0 before the start.
+			</description>
+		</method>
+		<method name="get_engine_throttle" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="engine" type="int" />
+			<description>
+				Returns the throttle command of engine [param engine]: its own value from [method set_engine_throttle], or [member throttle]. Pushes an error and returns 0 if there is no such engine.
+			</description>
+		</method>
 		<method name="get_fdm" qualifiers="const">
 			<return type="JSBSimFDM" />
 			<description>
 				Returns the [JSBSimFDM] this node steps, for reading and writing JSBSim properties (for example [code]get_fdm().get_property("position/h-agl-ft")[/code], in JSBSim's feet). It is the same object for the lifetime of the node and can outlive it.
 				[b]Note:[/b] The pilot commands ([member aileron], [member elevator], [member rudder], [member throttle], [member brake]), the time step and the wind are written to JSBSim again on every step or change, so setting the corresponding JSBSim properties directly has no lasting effect. Loading another model through the [JSBSimFDM] removes this node's ground; use [member aircraft], [member data_dir] and [method start] instead.
+			</description>
+		</method>
+		<method name="get_fuel" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the fuel on board in kilograms (all tanks, JSBSim [code]propulsion/total-fuel-lbs[/code]); 0 before the start.
 			</description>
 		</method>
 		<method name="get_geodetic_position" qualifiers="const">
@@ -110,6 +147,12 @@
 				Returns the velocity of the aircraft relative to the ground in scene axes (+X east, +Y up, -Z north), in m/s and in simulation time (multiply by [member time_scale] for game time).
 			</description>
 		</method>
+		<method name="get_mass" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current mass in kilograms, fuel and payload included (JSBSim [code]inertia/weight-lbs[/code]); 0 before the start.
+			</description>
+		</method>
 		<method name="is_crashed" qualifiers="const">
 			<return type="bool" />
 			<description>
@@ -139,6 +182,14 @@
 			<description>
 				Returns the aircraft to its initial condition (position, speed, trim, simulation time 0) and clears [method is_crashed] and [method is_failed]. The properties are read again, including the origin, [member ground_path] and the wind. After a crash or failure the model is loaded again (as with [method start]); otherwise the loaded model is kept. In the air the [member throttle] goes back to its value when [method start] was called (then the trim may change it), and the stick, pedals and brake to 0.
 				Returns [code]false[/code] if the initial condition cannot be applied. Pushes an error if [method start] has not succeeded before.
+			</description>
+		</method>
+		<method name="set_engine_throttle">
+			<return type="void" />
+			<param index="0" name="engine" type="int" />
+			<param index="1" name="value" type="float" />
+			<description>
+				Sets the throttle of engine [param engine] alone (0 to 1, clamped), for asymmetric thrust or an engine failure; the other engines keep following [member throttle]. Setting [member throttle] again (also by [member JSBSimAutopilot.speed_hold]) and [method restart] return every engine to it. Pushes an error if there is no such engine (see [method get_engine_count]).
 			</description>
 		</method>
 		<method name="start">
@@ -175,6 +226,12 @@
 		<member name="elevator" type="float" setter="set_elevator" getter="get_elevator" default="0.0">
 			Elevator command, from -1 to 1 (clamped); +1 is stick forward (nose down) and -1 is stick back (nose up). 0 is the trimmed position. Written to JSBSim before every step. A [JSBSimAutopilot] or [JSBSimInput] child overwrites it. Reset to 0 by [method start] and [method restart].
 		</member>
+		<member name="flaps" type="float" setter="set_flaps" getter="get_flaps" default="0.0">
+			Flap command from 0 (up) to 1 (full), clamped, written to JSBSim at every step. Models without flaps ignore it (the bundled J3Cub and TUAV have none). It is kept by [method start] and [method restart], and the trim is done with it.
+		</member>
+		<member name="gear_down" type="bool" setter="set_gear_down" getter="get_gear_down" default="true">
+			Landing gear command: [code]true[/code] down, [code]false[/code] up. Only models with retractable gear react. Kept by [method start] and [method restart].
+		</member>
 		<member name="geo_origin_path" type="NodePath" setter="set_geo_origin_path" getter="get_geo_origin_path" default="NodePath(&quot;&quot;)">
 			Path to a node whose [code]latitude[/code] and [code]longitude[/code] (degrees) and [code]height[/code] (metres above the ellipsoid) properties define the origin of the scene frame, for example godot-dis' [code]DisGeoOrigin[/code]. Read by [method start] and [method restart]. If empty, [member origin_latitude], [member origin_longitude] and [member origin_height] are used. [method start] fails if the path does not point to a node.
 		</member>
@@ -195,6 +252,9 @@
 		</member>
 		<member name="longitude" type="float" setter="set_longitude" getter="get_longitude" default="32.69">
 			Initial longitude in degrees.
+		</member>
+		<member name="mixture" type="float" setter="set_mixture" getter="get_mixture" default="1.0">
+			Mixture command for all engines from 0 (cut-off) to 1 (rich), clamped; piston engines use it. Kept by [method start] and [method restart].
 		</member>
 		<member name="origin_height" type="float" setter="set_origin_height" getter="get_origin_height" default="0.0">
 			Height in metres above the WGS84 ellipsoid of the origin of the scene frame, when [member geo_origin_path] is empty.
@@ -218,7 +278,7 @@
 			If [code]true[/code], the aircraft starts at rest on the ground at [member latitude] and [member longitude] (the ground at that point, see [member ground_path]); [member height] and [member airspeed] are ignored. It starts 1 ft above the ground and is trimmed with [constant JSBSimFDM.TRIM_GROUND] if [member trim_on_start] is on. The throttle is set to 0.
 		</member>
 		<member name="throttle" type="float" setter="set_throttle" getter="get_throttle" default="0.8">
-			Throttle command from 0 to 1 (clamped), applied to all engines. With [member trim_on_start] it is set to the trimmed throttle at the start; with [member start_on_ground] it starts at 0.
+			Throttle command from 0 to 1 (clamped), applied to all engines (setting it clears the per-engine values of [method set_engine_throttle]). With [member trim_on_start] it is set to the trimmed throttle at the start; with [member start_on_ground] it starts at 0.
 		</member>
 		<member name="time_scale" type="float" setter="set_time_scale" getter="get_time_scale" default="1.0">
 			Simulation seconds per game second. 1 is real time, 0 stops the simulation, larger values fast-forward. Must not be negative. At most 2400 JSBSim steps are done per physics frame, so very high values cannot be reached.

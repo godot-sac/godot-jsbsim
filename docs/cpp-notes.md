@@ -185,3 +185,12 @@ koruma devredeyken belgeler atlanıyor. Ayrıntılı (İngilizce) not godot-dis 
 `<godot> --headless --path . --doctool . --gdextension-docs` (kardeş bağlantılı godot-dis'in `Dis*.xml`'lerini sil),
 sonra `python tools/check_docs.py`.
 
+
+## Per-engine throttles (2026-11-14)
+- **NaN as "not set"** (`engine_throttles` in `jsbsim_aircraft.h`): a `std::vector<double>` holds one value per
+  engine, and `NaN` means "follow `throttle`". `std::isnan(x)` is the only reliable test: `NaN == NaN` is false.
+  A separate `std::vector<bool>` would work too; one array keeps the two facts from drifting apart.
+- **`resize(n, value)`** grows a vector to `n` elements and fills the new ones with `value`
+  (`engine_throttles.resize(engine + 1, std::nan(""))`); existing elements are kept.
+- **A `static` free function in a `.cpp`** (`read_property`) is visible only in that file: a small helper that does
+  not belong to the class's interface and cannot clash with a function of the same name elsewhere.

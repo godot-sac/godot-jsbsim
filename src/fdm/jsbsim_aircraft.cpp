@@ -21,6 +21,7 @@
 #include <models/FGInertial.h>
 #include <models/FGLGear.h>
 #include <models/FGPropagate.h>
+#include <models/FGPropulsion.h>
 
 #include "fdm/jsbsim_autopilot.h"
 
@@ -30,6 +31,7 @@ using namespace gjsb::geo;
 namespace {
 
 constexpr double M_PER_FT = 0.3048;
+constexpr double KG_PER_LB = 0.45359237;
 // Upper bound for steps in one advance() call, so a long hitch (debugger, loading) does not freeze the game.
 constexpr int MAX_STEPS_PER_ADVANCE = 2400;
 // Beyond these the state is treated as invalid. After a hard ground impact JSBSim's state grows huge (1e34 m) for a
@@ -223,10 +225,8 @@ bool JSBSimAircraft::apply_initial_condition() {
 		return false;
 	}
 	fdm->start_engines();
-	if (fdm->has_property("fcs/mixture-cmd-norm")) {
-		fdm->set_property("fcs/mixture-cmd-norm", 1.0);
-	}
 	aileron = elevator = rudder = brake = 0.0;
+	engine_throttles.clear();
 	if (autopilot) {
 		autopilot->reset_loops();
 	}
@@ -241,7 +241,7 @@ bool JSBSimAircraft::apply_initial_condition() {
 		throttle = start_throttle; // restart() begins like start(), not with the throttle of the last flight
 	}
 	if (!start_on_ground && trim_on_start) {
-		exec->GetFCS()->SetThrottleCmd(-1, throttle);
+		apply_controls(); // throttle, flaps, gear and mixture as configured: the trim is for this configuration
 		if (fdm->trim(JSBSimFDM::TRIM_FULL)) {
 			transfer_trim(fdm.ptr(), "fcs/elevator-cmd-norm", "fcs/pitch-trim-cmd-norm");
 			transfer_trim(fdm.ptr(), "fcs/aileron-cmd-norm", "fcs/roll-trim-cmd-norm");
@@ -469,7 +469,14 @@ void JSBSimAircraft::apply_controls() {
 	fcs->SetDeCmd(elevator);
 	fcs->SetDrCmd(-rudder); // JSBSim: positive rudder command yaws left
 	fcs->SetDsCmd(rudder); // nose / tail wheel steering, positive turns right with the right pedal
-	fcs->SetThrottleCmd(-1, throttle);
+	const int engines = int(exec->GetPropulsion()->GetNumEngines());
+	for (int i = 0; i < engines; i++) {
+		const bool own = i < int(engine_throttles.size()) && !std::isnan(engine_throttles[i]);
+		fcs->SetThrottleCmd(i, own ? engine_throttles[i] : throttle);
+		fcs->SetMixtureCmd(i, mixture);
+	}
+	fcs->SetDfCmd(flaps);
+	fcs->SetGearCmd(gear_down ? 1.0 : 0.0);
 	fcs->SetLBrake(brake);
 	fcs->SetRBrake(brake);
 	fcs->SetCBrake(brake);
@@ -552,10 +559,62 @@ void JSBSimAircraft::set_rudder(double value) {
 
 void JSBSimAircraft::set_throttle(double value) {
 	throttle = Math::clamp(value, 0.0, 1.0);
+	engine_throttles.clear(); // all engines follow `throttle` again
 }
 
 void JSBSimAircraft::set_brake(double value) {
 	brake = Math::clamp(value, 0.0, 1.0);
+}
+
+void JSBSimAircraft::set_flaps(double value) {
+	flaps = Math::clamp(value, 0.0, 1.0);
+}
+
+void JSBSimAircraft::set_mixture(double value) {
+	mixture = Math::clamp(value, 0.0, 1.0);
+}
+
+int JSBSimAircraft::get_engine_count() const {
+	JSBSim::FGFDMExec *exec = fdm->get_exec();
+	return exec && fdm->is_loaded() ? int(exec->GetPropulsion()->GetNumEngines()) : 0;
+}
+
+void JSBSimAircraft::set_engine_throttle(int engine, double value) {
+	ERR_FAIL_INDEX_MSG(engine, get_engine_count(), "JSBSimAircraft: no such engine.");
+	if (int(engine_throttles.size()) <= engine) {
+		engine_throttles.resize(engine + 1, std::nan(""));
+	}
+	engine_throttles[engine] = Math::clamp(value, 0.0, 1.0);
+}
+
+double JSBSimAircraft::get_engine_throttle(int engine) const {
+	ERR_FAIL_INDEX_V_MSG(engine, get_engine_count(), 0.0, "JSBSimAircraft: no such engine.");
+	const bool own = engine < int(engine_throttles.size()) && !std::isnan(engine_throttles[engine]);
+	return own ? engine_throttles[engine] : throttle;
+}
+
+static double read_property(const Ref<JSBSimFDM> &fdm, const char *name, double scale) {
+	return fdm->is_loaded() && fdm->has_property(name) ? fdm->get_property(name) * scale : 0.0;
+}
+
+double JSBSimAircraft::get_alpha() const {
+	return read_property(fdm, "aero/alpha-deg", 1.0);
+}
+
+double JSBSimAircraft::get_beta() const {
+	return read_property(fdm, "aero/beta-deg", 1.0);
+}
+
+double JSBSimAircraft::get_calibrated_airspeed() const {
+	return read_property(fdm, "velocities/vc-kts", 1.0);
+}
+
+double JSBSimAircraft::get_mass() const {
+	return read_property(fdm, "inertia/weight-lbs", KG_PER_LB);
+}
+
+double JSBSimAircraft::get_fuel() const {
+	return read_property(fdm, "propulsion/total-fuel-lbs", KG_PER_LB);
 }
 
 #define BIND_PROPERTY(m_type, m_name, m_hint, m_hint_string)                                                  \
@@ -622,4 +681,15 @@ void JSBSimAircraft::_bind_methods() {
 	BIND_PROPERTY(FLOAT, rudder, PROPERTY_HINT_RANGE, "-1,1,0.01");
 	BIND_PROPERTY(FLOAT, throttle, PROPERTY_HINT_RANGE, "0,1,0.01");
 	BIND_PROPERTY(FLOAT, brake, PROPERTY_HINT_RANGE, "0,1,0.01");
+	BIND_PROPERTY(FLOAT, flaps, PROPERTY_HINT_RANGE, "0,1,0.01");
+	BIND_PROPERTY(BOOL, gear_down, PROPERTY_HINT_NONE, "");
+	BIND_PROPERTY(FLOAT, mixture, PROPERTY_HINT_RANGE, "0,1,0.01");
+	ClassDB::bind_method(D_METHOD("get_engine_count"), &JSBSimAircraft::get_engine_count);
+	ClassDB::bind_method(D_METHOD("set_engine_throttle", "engine", "value"), &JSBSimAircraft::set_engine_throttle);
+	ClassDB::bind_method(D_METHOD("get_engine_throttle", "engine"), &JSBSimAircraft::get_engine_throttle);
+	ClassDB::bind_method(D_METHOD("get_alpha"), &JSBSimAircraft::get_alpha);
+	ClassDB::bind_method(D_METHOD("get_beta"), &JSBSimAircraft::get_beta);
+	ClassDB::bind_method(D_METHOD("get_calibrated_airspeed"), &JSBSimAircraft::get_calibrated_airspeed);
+	ClassDB::bind_method(D_METHOD("get_mass"), &JSBSimAircraft::get_mass);
+	ClassDB::bind_method(D_METHOD("get_fuel"), &JSBSimAircraft::get_fuel);
 }

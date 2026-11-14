@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- `JSBSimAircraft`: `flaps`, `gear_down` and `mixture` commands (written at every step, kept by `restart()`, used by
+  the trim), per-engine throttles (`set_engine_throttle()`, `get_engine_count()`), and `get_alpha()`,
+  `get_beta()`, `get_calibrated_airspeed()`, `get_mass()`, `get_fuel()`.
+
 ### Fixed
 - `JSBSimAutopilot`: a waypoint added after the route finished is flown (it becomes active and `follow_route` is
   turned on again); before, the new waypoint stayed inactive.

@@ -223,3 +223,68 @@ func test_restart_without_trim_starts_with_the_start_throttle() -> void:
 	assert_true(a.restart())
 	assert_almost_eq(a.throttle, 0.6, 1e-9, "the throttle of start(), not of the last flight")
 	assert_eq(a.aileron, 0.0)
+
+
+func test_flaps_mixture_and_flight_state() -> void:
+	var a := JSBSimAircraft.new()
+	a.aircraft = "c172p"  # has flaps (the bundled J3Cub and TUAV have none)
+	a.data_dir = "res://thirdparty/jsbsim"
+	a.latitude = LAT
+	a.longitude = LON
+	a.start_on_ground = true
+	a.origin_latitude = LAT
+	a.origin_longitude = LON
+	a.origin_height = 1000.0
+	a.ground_level = 1000.0
+	add_child_autofree(a)
+	a.paused = true
+	var fdm := a.get_fdm()
+	assert_eq(fdm.get_property("fcs/flap-cmd-norm"), 0.0)
+	a.flaps = 1.0
+	a.mixture = 0.7
+	a.advance(2.0)
+	assert_eq(fdm.get_property("fcs/flap-cmd-norm"), 1.0, "written at every step")
+	assert_gt(fdm.get_property("fcs/flap-pos-deg"), 1.0, "the flaps move")
+	assert_almost_eq(fdm.get_property("fcs/mixture-cmd-norm"), 0.7, 1e-6)
+	a.flaps = 3.0
+	assert_eq(a.flaps, 1.0, "clamped")
+	assert_almost_eq(a.get_calibrated_airspeed(), fdm.get_property("velocities/vc-kts"), 1e-9)
+	assert_almost_eq(a.get_alpha(), fdm.get_property("aero/alpha-deg"), 1e-9)
+	assert_almost_eq(a.get_beta(), fdm.get_property("aero/beta-deg"), 1e-9)
+	assert_almost_eq(a.get_mass(), fdm.get_property("inertia/weight-lbs") * 0.45359237, 1e-6)
+	assert_gt(a.get_mass(), 10.0)
+	assert_gte(a.get_fuel(), 0.0)
+	# Kept by restart(), which trims with them.
+	assert_true(a.restart())
+	assert_eq(a.flaps, 1.0)
+	assert_almost_eq(fdm.get_property("fcs/mixture-cmd-norm"), 0.7, 1e-6)
+
+
+func test_engine_throttles() -> void:
+	var a := JSBSimAircraft.new()
+	a.aircraft = "DHC6"
+	a.data_dir = "res://thirdparty/jsbsim"
+	a.latitude = LAT
+	a.longitude = LON
+	a.start_on_ground = true
+	a.origin_latitude = LAT
+	a.origin_longitude = LON
+	a.origin_height = 1000.0
+	a.ground_level = 1000.0
+	add_child_autofree(a)
+	a.paused = true
+	assert_eq(a.get_engine_count(), 2)
+	var fdm := a.get_fdm()
+	a.throttle = 0.4
+	a.set_engine_throttle(1, 0.9)
+	assert_eq(a.get_engine_throttle(0), 0.4)
+	assert_eq(a.get_engine_throttle(1), 0.9)
+	a.advance(0.5)
+	assert_almost_eq(fdm.get_property("fcs/throttle-cmd-norm[0]"), 0.4, 1e-6)
+	assert_almost_eq(fdm.get_property("fcs/throttle-cmd-norm[1]"), 0.9, 1e-6)
+	a.throttle = 0.2  # all engines again
+	a.advance(0.5)
+	assert_almost_eq(fdm.get_property("fcs/throttle-cmd-norm[1]"), 0.2, 1e-6)
+	a.set_engine_throttle(2, 0.5)
+	assert_engine_error("no such engine")
+	assert_eq(JSBSimAircraft.new().get_engine_count(), 0, "not started: no engines")
