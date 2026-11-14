@@ -201,3 +201,25 @@ func test_input_moves_the_controls() -> void:
 	for i in 30:
 		input._physics_process(1.0 / 60.0)
 	assert_almost_eq(a.aileron, 0.0, 1e-6, "recentres when released")
+
+
+func test_restart_without_trim_starts_with_the_start_throttle() -> void:
+	var a := JSBSimAircraft.new()
+	a.aircraft = "J3Cub"
+	a.latitude = LAT
+	a.longitude = LON
+	a.height = 1500.0
+	a.airspeed = 70.0
+	a.origin_latitude = LAT
+	a.origin_longitude = LON
+	a.origin_height = 1000.0
+	a.trim_on_start = false
+	a.throttle = 0.6
+	add_child_autofree(a)
+	a.paused = true
+	a.throttle = 0.1
+	a.aileron = 0.5
+	a.advance(1.0)
+	assert_true(a.restart())
+	assert_almost_eq(a.throttle, 0.6, 1e-9, "the throttle of start(), not of the last flight")
+	assert_eq(a.aileron, 0.0)

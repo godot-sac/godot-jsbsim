@@ -193,6 +193,7 @@ private:
 	double elevator = 0.0;
 	double rudder = 0.0;
 	double throttle = 0.8;
+	double start_throttle = 0.8; // throttle when start() was called: restart() begins with it again
 	double brake = 0.0; // 0..1, both main wheels
 
 	godot::Ref<JSBSimFDM> fdm;

@@ -153,6 +153,7 @@ bool JSBSimAircraft::start() {
 	if (!fdm->load_model(aircraft, data_dir)) {
 		return false;
 	}
+	start_throttle = throttle;
 	if (!apply_initial_condition()) {
 		return false;
 	}
@@ -236,7 +237,10 @@ bool JSBSimAircraft::apply_initial_condition() {
 		if (trim_on_start) {
 			fdm->trim(JSBSimFDM::TRIM_GROUND);
 		}
-	} else if (trim_on_start) {
+	} else {
+		throttle = start_throttle; // restart() begins like start(), not with the throttle of the last flight
+	}
+	if (!start_on_ground && trim_on_start) {
 		exec->GetFCS()->SetThrottleCmd(-1, throttle);
 		if (fdm->trim(JSBSimFDM::TRIM_FULL)) {
 			transfer_trim(fdm.ptr(), "fcs/elevator-cmd-norm", "fcs/pitch-trim-cmd-norm");

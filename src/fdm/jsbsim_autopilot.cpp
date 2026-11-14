@@ -197,6 +197,7 @@ double JSBSimAutopilot::route_track(const Vec3 &position_ecef, const Geodetic &p
 			// Keep flying the last leg's course.
 			active = -1;
 			follow_route = false;
+			route_done = true;
 			heading_hold = true;
 			target_heading = wrap360(length > 1.0 ? std::atan2(ux, uy) * RAD_TO_DEG : desired_track);
 			emit_signal("route_finished");
@@ -233,7 +234,12 @@ void JSBSimAutopilot::add_waypoint(double latitude, double longitude, double hei
 	w.ecef = geodetic_to_ecef(w.geodetic);
 	w.speed = std::isfinite(speed) ? speed : NAN;
 	route.push_back(w);
-	if (active < 0 && route.size() == 1) {
+	if (active < 0 && route_done) {
+		// The route had ended: fly on to the new waypoint from where the aircraft is.
+		route_done = false;
+		set_active_waypoint(int(route.size()) - 1);
+		follow_route = true;
+	} else if (active < 0 && route.size() == 1) {
 		set_active_waypoint(0);
 	}
 }
@@ -249,12 +255,14 @@ void JSBSimAutopilot::add_waypoint_local(const Vector3 &position, double speed) 
 void JSBSimAutopilot::clear_route() {
 	route.clear();
 	active = -1;
+	route_done = false;
 	distance_to_waypoint = 0.0;
 	cross_track_error = 0.0;
 }
 
 void JSBSimAutopilot::set_active_waypoint(int index) {
 	ERR_FAIL_INDEX_MSG(index, int(route.size()), "JSBSimAutopilot: no such waypoint.");
+	route_done = false;
 	activate(index, Vec3{});
 	leg_start_pending = true;
 }
@@ -270,7 +278,9 @@ Dictionary JSBSimAutopilot::get_waypoint(int index) const {
 	if (aircraft && aircraft->is_started()) {
 		Geodetic g = w.geodetic;
 		if (!w.has_height) {
-			g.height = aircraft->local_frame().origin().height;
+			// No height of its own: the waypoint is flown at the aircraft's current height.
+			const PackedFloat64Array here = aircraft->get_geodetic_position();
+			g.height = here.size() == 3 ? here[2] : aircraft->local_frame().origin().height;
 		}
 		const Vec3 local = enu_to_godot(aircraft->local_frame().ecef_to_enu(geodetic_to_ecef(g)));
 		result["position"] = Vector3(real_t(local.x), real_t(local.y), real_t(local.z));

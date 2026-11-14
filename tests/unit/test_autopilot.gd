@@ -232,3 +232,31 @@ func test_restart_keeps_flying() -> void:
 	_fly(a, 120.0)
 	assert_false(a.is_crashed())
 	assert_almost_eq(_height(a), 1700.0, 15.0, "climbs again from the restart")
+
+
+func test_a_waypoint_added_after_the_route_ended_is_flown() -> void:
+	var a := _aircraft()
+	var ap: JSBSimAutopilot = a.get_autopilot()
+	ap.engage()
+	ap.add_waypoint_local(Vector3(0, a.position.y, -800))
+	ap.follow_route = true
+	watch_signals(ap)
+	_fly(a, 40.0)
+	assert_signal_emitted(ap, "route_finished")
+	assert_false(ap.follow_route)
+	# A new waypoint after the end picks the route up again, from where the aircraft is.
+	ap.add_waypoint_local(Vector3(1500, a.position.y, -800))
+	assert_eq(ap.get_active_waypoint(), 1)
+	assert_true(ap.follow_route)
+	_fly(a, 90.0)
+	assert_signal_emit_count(ap, "waypoint_reached", 2)
+	assert_signal_emit_count(ap, "route_finished", 2)
+
+
+func test_waypoint_without_height_is_shown_at_the_aircraft_height() -> void:
+	var a := _aircraft()
+	var ap: JSBSimAutopilot = a.get_autopilot()
+	ap.add_waypoint(LAT + 0.01, LON)  # no height: flown at the current height
+	var w := ap.get_waypoint(0)
+	assert_true(is_nan(w.height))
+	assert_almost_eq((w.position as Vector3).y, a.position.y, 2.0, "about the aircraft's scene height")

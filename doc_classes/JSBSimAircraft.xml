@@ -137,7 +137,7 @@
 		<method name="restart">
 			<return type="bool" />
 			<description>
-				Returns the aircraft to its initial condition (position, speed, trim, simulation time 0) and clears [method is_crashed] and [method is_failed]. The properties are read again, including the origin, [member ground_path] and the wind. After a crash or failure the model is loaded again (as with [method start]); otherwise the loaded model is kept.
+				Returns the aircraft to its initial condition (position, speed, trim, simulation time 0) and clears [method is_crashed] and [method is_failed]. The properties are read again, including the origin, [member ground_path] and the wind. After a crash or failure the model is loaded again (as with [method start]); otherwise the loaded model is kept. In the air the [member throttle] goes back to its value when [method start] was called (then the trim may change it), and the stick, pedals and brake to 0.
 				Returns [code]false[/code] if the initial condition cannot be applied. Pushes an error if [method start] has not succeeded before.
 			</description>
 		</method>

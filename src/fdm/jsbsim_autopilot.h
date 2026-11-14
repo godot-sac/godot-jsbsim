@@ -126,6 +126,7 @@ private:
 	int active = -1;
 	gjsb::geo::Vec3 leg_start;
 	bool leg_start_pending = false; // the leg starts at the aircraft's position on the next update
+	bool route_done = false; // the route ended by itself (route_finished); add_waypoint() picks it up again
 	double distance_to_waypoint = 0.0;
 	double cross_track_error = 0.0;
 	double desired_track = 0.0;

@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- `JSBSimAutopilot`: a waypoint added after the route finished is flown (it becomes active and `follow_route` is
+  turned on again); before, the new waypoint stayed inactive.
+- `JSBSimAutopilot.get_waypoint()`: a waypoint without a height is placed at the aircraft's current height (where it
+  is flown), not at the frame origin's height.
+- `JSBSimAircraft.restart()` in the air starts with the throttle of `start()`, like the other pilot commands,
+  instead of the throttle of the last flight (seen without trim or when the trim failed).
 ### Documentation
 - Exported games tested with Godot 4.7.2 release templates on Windows and Linux (docs/compatibility.md).
 

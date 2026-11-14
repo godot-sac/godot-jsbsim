@@ -37,7 +37,7 @@
 			<param index="3" name="speed" type="float" default="nan" />
 			<description>
 				Appends a waypoint to the route. [param latitude] and [param longitude] are geodetic degrees. [param height] is metres above the WGS84 ellipsoid and [param speed] is calibrated knots; if either is [code]NAN[/code] (the default) the corresponding target ([member target_altitude], [member target_speed]) is not changed when the waypoint becomes active. A waypoint with a height or speed sets the target when it becomes the active one; it takes effect while [member altitude_hold] or [member speed_hold] is on.
-				The first waypoint added to an empty route becomes active immediately. Adding waypoints does not turn on [member follow_route] or [member enabled]. A latitude or longitude that is not finite, or a latitude beyond 90 degrees, pushes an error and the waypoint is not added.
+				The first waypoint added to an empty route becomes active immediately. Adding waypoints does not turn on [member follow_route] or [member enabled], with one exception: a waypoint added after the route finished by itself ([signal route_finished]) becomes active at once and [member follow_route] is turned on again, so the aircraft flies on to it from where it is. A latitude or longitude that is not finite, or a latitude beyond 90 degrees, pushes an error and the waypoint is not added.
 			</description>
 		</method>
 		<method name="add_waypoint_local">
@@ -106,7 +106,7 @@
 			<return type="Dictionary" />
 			<param index="0" name="index" type="int" />
 			<description>
-				Returns waypoint [param index] as a [Dictionary] with the keys [code]latitude[/code] and [code]longitude[/code] (degrees), [code]height[/code] (metres, [code]NAN[/code] if the waypoint has none), [code]speed[/code] (knots, [code]NAN[/code] if none) and, if the parent aircraft has started, [code]position[/code] (a [Vector3] in the aircraft's scene frame; a waypoint without a height is placed at the height of the frame's origin). Returns an empty dictionary and pushes an error if [param index] is out of range.
+				Returns waypoint [param index] as a [Dictionary] with the keys [code]latitude[/code] and [code]longitude[/code] (degrees), [code]height[/code] (metres, [code]NAN[/code] if the waypoint has none), [code]speed[/code] (knots, [code]NAN[/code] if none) and, if the parent aircraft has started, [code]position[/code] (a [Vector3] in the aircraft's scene frame; a waypoint without a height is placed at the aircraft's current height, where it is flown). Returns an empty dictionary and pushes an error if [param index] is out of range.
 			</description>
 		</method>
 		<method name="get_waypoint_count" qualifiers="const">
@@ -119,7 +119,7 @@
 			<return type="void" />
 			<param index="0" name="index" type="int" />
 			<description>
-				Makes waypoint [param index] the one flown to, on a leg that starts at the aircraft's position at the next update, and applies its height and speed targets. Use it to skip ahead or to restart a route that has finished (also set [member follow_route] again in that case). Pushes an error if [param index] is out of range.
+				Makes waypoint [param index] the one flown to, on a leg that starts at the aircraft's position at the next update, and applies its height and speed targets. Use it to skip ahead or to fly a finished route again (also set [member follow_route] again in that case). Pushes an error if [param index] is out of range.
 			</description>
 		</method>
 		<method name="update">
@@ -240,7 +240,7 @@
 	<signals>
 		<signal name="route_finished">
 			<description>
-				Emitted after the last waypoint of a route without [member loop_route] was reached (and after its [signal waypoint_reached]). The autopilot then keeps the last leg's course with [member heading_hold]. A route of a single waypoint also finishes, even with [member loop_route].
+				Emitted after the last waypoint of a route without [member loop_route] was reached (and after its [signal waypoint_reached]). The autopilot then keeps the last leg's course with [member heading_hold]; a waypoint added afterwards with [method add_waypoint] picks the route up again. A route of a single waypoint also finishes, even with [member loop_route].
 			</description>
 		</signal>
 		<signal name="waypoint_reached">
